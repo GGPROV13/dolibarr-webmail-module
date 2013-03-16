@@ -59,48 +59,48 @@ if (!empty($_GET['reference_' . $_GET['num_ligne']])) {
 
     $reference = $_GET['reference_' . $_GET['num_ligne']] ? $_GET['reference_' . $_GET['num_ligne']] : '';
     // Recherche parmis les societes
-    $sql = "SELECT s.rowid as rowid, CONCAT_WS(' - ', s.code_client, s.code_fournisseur) as reference, s.nom as nom_societe, 'societe' as type_element";
+    $sql = "SELECT s.rowid as rowid, CONCAT_WS(' - ', s.code_client, s.code_fournisseur) as reference, s.nom as nom_societe, 'societe' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "societe as s";
     $sql.= " WHERE ";
     $sql.=" (s.code_client LIKE '%" . $db->escape($reference) . "%' OR s.nom LIKE '%" . $db->escape($reference) . "%' OR s.code_fournisseur LIKE '%" . $db->escape($reference) . "%')";
     $sql .= " UNION ";
     // Recherche parmis les projets
-    $sql .= "SELECT p.rowid as rowid, CONCAT_WS(' - ', p.ref, p.title) as reference, s.nom as nom_societe, 'projet' as type_element";
+    $sql .= "SELECT p.rowid as rowid, CONCAT_WS(' - ', p.ref, p.title) as reference, s.nom as nom_societe, 'projet' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "projet as p";
     $sql.= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid=p.fk_soc";
     $sql.= " WHERE ";
     $sql.=" (p.ref LIKE '%" . $db->escape($reference) . "%' OR p.title LIKE '%" . $db->escape($reference) . "%')";
     $sql .= " UNION ";
     // Recherche parmis les propales clients
-    $sql .= "SELECT p.rowid as rowid, CONCAT_WS(' - ', p.ref, p.ref_client) as reference, s.nom as nom_societe, 'propal' as type_element";
+    $sql .= "SELECT p.rowid as rowid, CONCAT_WS(' - ', p.ref, p.ref_client) as reference, s.nom as nom_societe, 'propal' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "propal as p";
     $sql.= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid=p.fk_soc";
     $sql.= " WHERE ";
     $sql.=" (p.ref LIKE '%" . $db->escape($reference) . "%' OR p.ref_client LIKE '%" . $db->escape($reference) . "%')";
     $sql .= " UNION ";
     // Recherche parmis les commandes clients
-    $sql .= "SELECT c.rowid as rowid, CONCAT_WS(' - ', c.ref, c.ref_client) as reference, s.nom as nom_societe, 'order' as type_element";
+    $sql .= "SELECT c.rowid as rowid, CONCAT_WS(' - ', c.ref, c.ref_client) as reference, s.nom as nom_societe, 'order' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "commande as c";
     $sql.= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid=c.fk_soc";
     $sql.= " WHERE ";
     $sql.=" (c.ref LIKE '%" . $db->escape($reference) . "%' OR c.ref_client LIKE '%" . $db->escape($reference) . "%')";
     $sql .= " UNION ";
     // Recherche parmis les factures clients
-    $sql .= "SELECT f.rowid as rowid, CONCAT_WS(' - ', f.facnumber, f.ref_client) as reference, s.nom as nom_societe, 'invoice' as type_element";
+    $sql .= "SELECT f.rowid as rowid, CONCAT_WS(' - ', f.facnumber, f.ref_client) as reference, s.nom as nom_societe, 'invoice' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "facture as f";
     $sql.= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid=f.fk_soc";
     $sql.= " WHERE ";
     $sql.=" (f.facnumber LIKE '%" . $db->escape($reference) . "%' OR f.ref_client LIKE '%" . $db->escape($reference) . "%')";
     $sql .= " UNION ";
     // Recherche parmis les commandes fournisseurs
-    $sql .= "SELECT c.rowid as rowid, CONCAT_WS(' - ', c.ref, c.ref_supplier) as reference, s.nom as nom_societe, 'order_supplier' as type_element";
+    $sql .= "SELECT c.rowid as rowid, CONCAT_WS(' - ', c.ref, c.ref_supplier) as reference, s.nom as nom_societe, 'order_supplier' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur as c";
     $sql.= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid=c.fk_soc";
     $sql.= " WHERE ";
     $sql.=" (c.ref LIKE '%" . $db->escape($reference) . "%' OR c.ref_supplier LIKE '%" . $db->escape($reference) . "%')";
     $sql .= " UNION ";
     // Recherche parmis les factures fournisseurs
-    $sql .= "SELECT f.rowid as rowid, f.facnumber as reference, s.nom as nom_societe, 'invoice_supplier' as type_element";
+    $sql .= "SELECT f.rowid as rowid, f.facnumber as reference, s.nom as nom_societe, 'invoice_supplier' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "facture_fourn as f";
     $sql.= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid=f.fk_soc";
     $sql.= " WHERE ";
@@ -116,6 +116,7 @@ if (!empty($_GET['reference_' . $_GET['num_ligne']])) {
             $row_array['value'] = $row['reference'];
             $row_array['reference_rowid_' . $_GET['num_ligne']] = $row['rowid'];
             $row_array['reference_type_element_' . $_GET['num_ligne']] = $row['type_element'];
+            $row_array['reference_fk_socid_' . $_GET['num_ligne']] = $row['fk_socid'];
 
             array_push($return_arr, $row_array);
         }

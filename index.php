@@ -49,12 +49,19 @@ if (!$res && file_exists("../../../../../dolibarr/htdocs/main.inc.php"))
     $res = @include("../../../../../dolibarr/htdocs/main.inc.php");   // Used on dev env only
 if (!$res)
     die("Include of main fails");
+
+
+require_once(DOL_DOCUMENT_ROOT . "/core/lib/agenda.lib.php");
+require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/cactioncomm.class.php");
+require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/actioncomm.class.php");
+
 // Change this following line to use the correct relative path from htdocs (do not remove DOL_DOCUMENT_ROOT)
 //require_once(DOL_DOCUMENT_ROOT."/../dev/skeleton/skeleton_class.class.php");
 // Load traductions files requiredby by page
 $langs->load("companies");
 $langs->load("other");
 $langs->load("dolimail");
+$langs->load("agenda");
 
 global $conf;
 if ($conf->global->PAGINATION_WEBMAIL)
@@ -94,6 +101,97 @@ if ($resql) {
     $db->free($resql);
 }
 
+if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('reference_type_element')) {
+
+    $mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}', $user->mailbox_imap_login, $user->mailbox_imap_password);
+
+    if (FALSE === $mbox) {
+        $info = FALSE;
+        $err = 'La connexion a échoué. Vérifiez vos paramètres!';
+    } else {
+        $uid = $_GET['uid'];
+        $headerText = imap_fetchHeader($mbox, GETPOST('reference_mail_uid'), FT_UID);
+        $header = imap_rfc822_parse_headers($headerText);
+
+        // REM: Attention s'il y a plusieurs sections
+        $corps = imap_fetchbody($mbox, GETPOST('reference_mail_uid'), 1, FT_UID);
+    }
+    imap_close($mbox);
+
+    $actioncomm = new ActionComm($db);
+    $cactioncomm = new CActionComm($db);
+
+    // Initialisation objet actioncomm
+    $usertodo = $user;
+    $actioncomm->usertodo = $usertodo;
+
+    if (GETPOST('fk_socid', 'int') > 0) {
+        $societe = new Societe($db);
+        $societe->fetch(GETPOST('socid', 'int'));
+        $actioncomm->societe = $societe;
+    }
+
+    if ($conf->global->CODE_ACTIONCOMM_WEBMAIL)
+        $cactioncomm_code = $conf->global->CODE_ACTIONCOMM_WEBMAIL;
+    else
+        $cactioncomm_code = "AC_OTH";
+
+    $result = $cactioncomm->fetch($cactioncomm_code);
+
+    $actioncomm->type_id = $cactioncomm->id;
+    $actioncomm->type_code = $cactioncomm->code;
+    $actioncomm->priority = 0;
+    $actioncomm->fulldayevent = 0;
+    $actioncomm->location = '';
+    // On utilise l'objet du mail 
+    $actioncomm->label = $header->subject;
+    // ou a défaut le label "Envoi de mail de %expediteur%"
+    if (!$actioncomm->label) {
+        if (trim($header->from->personnal) == "")
+            $actioncomm->label = $langs->transnoentitiesnoconv("MailFrom", $header->fromadress);
+        else
+            $actioncomm->label = $langs->transnoentitiesnoconv("MailFrom", $header->from->personnal);
+    }
+
+    if (GETPOST('reference_type_element') == 'projet')
+        $actioncomm->fk_project = GETPOST('reference_rowid');
+    else
+        $actioncomm->fk_project = 0;
+    $actioncomm->datep = strtotime($header->date);
+    
+    // On recupère le contenu du mail qu'on place dans la note
+    $actioncomm->note = trim($corps);
+
+    $actioncomm->fk_element = GETPOST('reference_rowid');
+    $actioncomm->elementtype = GETPOST('reference_type_element');
+    
+    // 
+    // TODO
+    // On recherche l'expediteur dans les contacts
+    if (isset($_POST["contactid"])) {
+        $actioncomm->contact = $contact;
+    }
+    // Special for module webcal and phenix
+    if ($_POST["add_webcal"] == 'on' && $conf->webcalendar->enabled)
+        $actioncomm->use_webcal = 1;
+    if ($_POST["add_phenix"] == 'on' && $conf->phenix->enabled)
+        $actioncomm->use_phenix = 1;
+
+
+    if (!$error) {
+        $db->begin();
+
+        // On cree l'action
+        $idaction = $actioncomm->add($user);
+
+        if ($idaction > 0) {
+            if (!$actioncomm->error) {
+                $db->commit();
+            }
+        }
+    }
+}
+
 /* * *************************************************
  * VIEW
  *
@@ -122,13 +220,7 @@ if (FALSE === $mbox) {
         $err = 'Impossible de lire le contenu de la boite mail';
     }
 }
-if (GETPOST("reference") != "") {
-    print "Voici les informations reçues.<br />";
-    print '<pre>';
-    print_r($_POST);
-    print '</pre>';
-    print 'Reste à charger le mail, l\'enregistrer en tant que nouvel evenement, lire les eventuelles pieces jointes et les enregistrer en tant que fichier<br />';
-}
+
 if (FALSE === $info) {
     echo $err;
 } else {
@@ -225,12 +317,14 @@ if (FALSE === $info) {
             echo '<table><tr><td>';
             $out = '';
             if ($conf->use_javascript_ajax)
-                $out .= ajax_multiautocompleter('reference_' . $i, array('reference_rowid_' . $i, 'reference_type_element_' . $i), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=' . $i) . "\n";
+                $out .= ajax_multiautocompleter('reference_' . $i, array('reference_rowid_' . $i, 'reference_type_element_' . $i, 'reference_fk_socid_' . $i), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=' . $i) . "\n";
             $out.= '<input id="reference_' . $i . '" type="text" name="reference" value="';
             print $out . '">' . "\n";
             print '<input id="reference_rowid_' . $i . '" type="hidden" name="reference_rowid" value="';
             print '">' . "\n";
             print '<input id="reference_type_element_' . $i . '" type="hidden" name="reference_type_element" value="';
+            print '">' . "\n";
+            print '<input id="reference_fk_socid_' . $i . '" type="hidden" name="reference_fk_socid" value="';
             print '">' . "\n";
             print '<input id="reference_mail_uid_' . $i . '" type="hidden" name="reference_mail_uid" value="';
             print $mail->uid;
