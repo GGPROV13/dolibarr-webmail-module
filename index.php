@@ -125,9 +125,9 @@ if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('refe
     $usertodo = $user;
     $actioncomm->usertodo = $usertodo;
 
-    if (GETPOST('fk_socid', 'int') > 0) {
+    if (GETPOST('reference_fk_socid', 'int') > 0) {
         $societe = new Societe($db);
-        $societe->fetch(GETPOST('socid', 'int'));
+        $societe->fetch(GETPOST('reference_fk_socid', 'int'));
         $actioncomm->societe = $societe;
     }
 
@@ -158,13 +158,13 @@ if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('refe
     else
         $actioncomm->fk_project = 0;
     $actioncomm->datep = strtotime($header->date);
-    
+
     // On recupère le contenu du mail qu'on place dans la note
     $actioncomm->note = trim($corps);
 
     $actioncomm->fk_element = GETPOST('reference_rowid');
     $actioncomm->elementtype = GETPOST('reference_type_element');
-    
+
     // 
     // TODO
     // On recherche l'expediteur dans les contacts
