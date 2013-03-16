@@ -103,7 +103,7 @@ if (FALSE === $mbox) {
     $header = imap_rfc822_parse_headers($headerText);
 
     // REM: Attention s'il y a plusieurs sections
-    $corps = imap_fetchbody($mbox, $uid, 1, FT_UID);
+    $corps = trim( utf8_encode( quoted_printable_decode(imap_fetchbody($mbox, $uid, 1, FT_UID))));
 }
 imap_close($mbox);
 
@@ -114,17 +114,21 @@ if ($conf->use_javascript_ajax)
     $out .= ajax_multiautocompleter('reference_0', array('reference_rowid_0', 'reference_type_element_0'), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=0') . "\n";
 $out.= '<input id="reference_0" type="text" name="reference_0" value="' . GETPOST("reference_0");
 print $out . '">' . "\n";
-print '<input id="reference_rowid_0" type="text" name="reference_rowid_0" value="';
+print '<input id="reference_rowid_0" type="hidden" name="reference_rowid_0" value="';
 print GETPOST("reference_rowid_0");
 print '">' . "\n";
-print '<input id="reference_type_element_0" type="text" name="reference_type_element_0" value="';
+print '<input id="reference_type_element_0" type="hidden" name="reference_type_element_0" value="';
 print GETPOST("reference_type_element_0");
+print '">' . "\n";
+print '<input id="reference_fk_socid_0" type="hidden" name="reference_fk_socid_0" value="';
+print GETPOST("reference_fk_socid_0");
 print '">' . "\n";
 print '</td></tr>';
 print '</table>';
+print '<h2>'.$header->subject.'</h2>';
 $from = $header->from;
-echo "Message de:" . $from[0]->personal . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]<br />";
-echo $corps;
+echo "Message de:" . $from[0]->personal . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]<br /><br />";
+echo nl2br($corps);
 
 // End of page
 llxFooter();

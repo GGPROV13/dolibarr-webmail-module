@@ -114,7 +114,7 @@ if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('refe
         $header = imap_rfc822_parse_headers($headerText);
 
         // REM: Attention s'il y a plusieurs sections
-        $corps = imap_fetchbody($mbox, GETPOST('reference_mail_uid'), 1, FT_UID);
+        $corps = trim( utf8_encode( quoted_printable_decode(imap_fetchbody($mbox, GETPOST('reference_mail_uid'), 1, FT_UID))));
     }
     imap_close($mbox);
 
