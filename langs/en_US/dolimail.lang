@@ -1,0 +1,9 @@
+# Dolibarr language file - fr_FR - customfields standard labels
+CHARSET= UTF-8
+
+#### ADMIN CONFIG INTERFACE ####
+DolimaillObject=Objet
+DolimaillFrom=Expediteur
+DolimaillDate=Date
+DolimaillTaille=Taille
+DolimaillFlagged= 
