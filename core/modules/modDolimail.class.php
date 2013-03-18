@@ -129,7 +129,7 @@ class modDolimail extends DolibarrModules
     // 'contact'          to add a tab in contact view
     // 'categories_x'	  to add a tab in category view (replace 'x' by type of category (0=product, 1=supplier, 2=customer, 3=member)
     $this->tabs = array();
-    $this->tabs = array('user:+mailboxconfig:MailboxConfig:@dolimail:/dolimail/usertab_mailboxconfig.php?id=__ID__');
+    $this->tabs = array('user:+mailboxconfig:MailboxConfig:dolimail@dolimail:/dolimail/usertab_mailboxconfig.php?id=__ID__');
 
     // Dictionnaries
     if (!isset($conf->dolimail->enabled))
@@ -204,7 +204,7 @@ class modDolimail extends DolibarrModules
         'mainmenu' => 'dolimail',
         'leftmenu' => 'dolimail',
         'url' => '/dolimail/index.php',
-        'langs' => 'dolimail', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+        'langs' => 'dolimail@dolimail', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
         'position' => 100,
         'enabled' => '$conf->dolimail->enabled', // Define condition to show or hide menu entry. Use '$conf->mymodule->enabled' if entry must be visible if module is enabled.
         'perms' => '1', // Use 'perms'=>'$user->rights->mymodule->level1->level2' if you want your menu with a permission rules

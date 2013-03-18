@@ -60,7 +60,7 @@ require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/actioncomm.class.php");
 // Load traductions files requiredby by page
 $langs->load("companies");
 $langs->load("other");
-$langs->load("dolimail");
+$langs->load("dolimail@dolimail");
 $langs->load("agenda");
 
 global $conf;
@@ -114,7 +114,7 @@ if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('refe
         $header = imap_rfc822_parse_headers($headerText);
 
         // REM: Attention s'il y a plusieurs sections
-        $corps = trim( utf8_encode( quoted_printable_decode(imap_fetchbody($mbox, GETPOST('reference_mail_uid'), 1, FT_UID))));
+        $corps = trim(utf8_encode(quoted_printable_decode(imap_fetchbody($mbox, GETPOST('reference_mail_uid'), 1, FT_UID))));
     }
     imap_close($mbox);
 
@@ -200,6 +200,12 @@ if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('refe
 
 llxHeader('', 'Dolibarr Webmail', '');
 
+$head[0][0] = DOL_URL_ROOT . '/dolimail/index.php';
+$head[0][1] = $langs->trans("DolimailMailbox");
+$head[0][2] = 'mailbox';
+
+dol_fiche_head($head, 'mailbox', $langs->trans("Webmail"), 0, 'mailbox');
+
 // Connexion
 $mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}INBOX' . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
 
@@ -211,7 +217,6 @@ if (FALSE === $mbox) {
     if (FALSE !== $info) {
         $indice_msgend = $info->Nmsgs - ($pagination * (GETPOST('num_page') - 1));
         $indice_msgbegin = max(1, $indice_msgend - $pagination + 1);
-
         $mails = array_reverse(imap_fetch_overview($mbox, $indice_msgbegin . ':' . $indice_msgend, 0));
         $menus = imap_list($mbox, $user->mailbox_imap_ref, '*');
         sort($menus);
@@ -222,10 +227,10 @@ if (FALSE === $mbox) {
 }
 
 if (FALSE === $info) {
-    echo $err;
+    print $err;
 } else {
-    echo "<div style='float:left;width:19%;'>";
-    echo "<h2><a href='" . DOL_URL_ROOT . "/dolimail/index.php'>" . $langs->trans("Boite de réception") . "</a></h2>";
+    print '<div style="float:left;width:19%;">';
+    print '<div class="titre"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans("Boite de réception") . '</a></div>';
     foreach ($menus as &$m) {
         $cible = $m;
         # Subfolders
@@ -234,27 +239,27 @@ if (FALSE === $info) {
             $p = array_shift($ex);
             $m = '&nbsp;&nbsp;' . str_replace($p . "/", '', $m);
         }
-        echo "<a href='" . DOL_URL_ROOT . "/dolimail/index.php?folder=" . urlencode(str_replace($user->mailbox_imap_ref, '', $cible)) . "'>";
-        echo str_replace($user->mailbox_imap_ref, '', $m);
-        echo "</a>";
-        echo "<br />";
+        print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . urlencode(str_replace($user->mailbox_imap_ref, '', $cible)) . '">';
+        print str_replace($user->mailbox_imap_ref, '', $m);
+        print '</a>';
+        print '<br />';
     }
-    echo "</div>";
-    echo "<div style='float:left;width:79%'>";
-    echo "<table style='width:100%;'>\n";
-    echo "    <tr>\n";
-    echo "      <th style='text-align:left;'>";
-    echo "<h2>";
+    print '</div>';
+    print '<div style="float:left;width:79%">';
+    print '<table style="width:100%;">';
+    print '    <tr>';
+    print '      <th style="text-align:left;">';
+    print '<div class="titre">';
     if (GETPOST('folder') == "") {
         print $langs->trans("Boite de réception");
     } else {
         print GETPOST('folder');
     }
-    print " (" . $info->Nmsgs . ")</h2>";
-    echo "      </th>\n";
-    echo "    </tr>\n";
-    echo "    <tr>\n";
-    echo "      <th style='text-align:right;'>";
+    print ' (' . $info->Nmsgs . ')</div>';
+    print '      </th>';
+    print '    </tr>';
+    print '    <tr>';
+    print '      <th style="text-align:right;">';
     $page_precedente = GETPOST("num_page") - 1;
     $page_suivante = GETPOST("num_page") + 1;
     if ($page_precedente > 0)
@@ -272,49 +277,46 @@ if (FALSE === $info) {
 
     if ($page_suivante < ceil($info->Nmsgs / $pagination))
         print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $page_suivante . '">Suivante</a> ';
-    echo "      </th>\n";
-    echo "    </tr>\n";
-    echo "</table>\n";
-    echo "<table style='width:100%;'>\n";
-    echo "  <thead>\n";
-    echo "    <tr>\n";
-    echo "      <th colspan='2'>" . $langs->trans("DolimaillObject") . "</th>\n";
-    echo "      <th>" . $langs->trans("DolimaillFrom") . "</th>\n";
-    echo "      <th>" . $langs->trans("DolimaillDate") . "</th>\n";
-    echo "      <th>" . $langs->trans("DolimaillTaille") . "</th>\n";
-    echo "      <th>" . $langs->trans("DolimaillFlagged") . "</th>\n";
-    echo "      <th>" . $langs->trans("DolimaillLinked") . "</th>\n";
-    echo "    </tr>\n";
-    echo "  </thead>\n";
-    echo "  <tbody>\n";
+    print '      </th>';
+    print '    </tr>';
+    print '</table>';
+    print '<table class="noborder" width="100%">';
+    print '<tr class="liste_titre">';
+    print '      <td class="liste_titre" align="center" colspan="2">' . $langs->trans("DolimaillObject") . '</td>';
+    print '      <td class="liste_titre"  align="center">' . $langs->trans("DolimaillFrom") . '</td>';
+    print '      <td class="liste_titre"  align="center">' . $langs->trans("DolimaillDate") . '</td>';
+    print '      <td class="liste_titre"  align="center">' . $langs->trans("DolimaillTaille") . '</td>';
+    print '      <td class="liste_titre"  align="center">' . $langs->trans("DolimaillFlagged") . '</td>';
+    print '      <td class="liste_titre"  align="center">' . $langs->trans("DolimaillLinked") . '</td>';
+    print '    </tr>';
     foreach ($mails as $i => $mail) {
         if ($mail->deleted == 0) {
             if (!isset($mail->subject) or trim($mail->subject) == '')
                 $mail->subject = $langs->trans('[ Empty subject ]');
-            echo "    <tr class='";
+            print '    <tr class="';
             if ($i % 2 == 0)
-                echo "impair "; else
-                echo "pair ";
+                print 'impair '; else
+                print 'pair ';
             if ($mail->seen)
-                echo "seen "; else
-                echo "unseen ";
-            echo "'>\n";
-            echo "      <td style='text-align:center;width:30px;'>";
+                print 'seen '; else
+                print 'unseen ';
+            print '">';
+            print '      <td style="text-align:center;width:30px;">';
             if ($mail->answered)
-                echo "        <img src='" . DOL_URL_ROOT . "/dolimail/img/answered.png' alt='answered' />";
-            echo "      </td>\n";
-            echo "      <td><a href='" . DOL_URL_ROOT . "/dolimail/detail.php?uid=" . $mail->uid . "'>" . @iconv_mime_decode(imap_utf8($mail->subject)) . "</a></td>\n";
-            echo "      <td>" . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($mail->from)))) . "</td>\n";
-            echo "      <td style='text-align:center;width: 115px;'>" . date("d/m/Y H:i", strtotime($mail->date)) . "</td>\n";
-            echo "      <td style='text-align:right;'>" . number_format($mail->size / 1000, 2) . "Ko</td>\n";
-            echo "      <td>";
+                print '        <img src="' . DOL_URL_ROOT . '/dolimail/img/answered.png" alt="answered" />';
+            print '      </td>';
+            print '      <td><a href="' . DOL_URL_ROOT . '/dolimail/detail.php?uid=' . $mail->uid . '">' . trim(utf8_encode(@iconv_mime_decode(imap_utf8($mail->subject)))) . '</a></td>';
+            print '      <td>' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($mail->from)))) . '</td>';
+            print '      <td style="text-align:center;width: 115px;">' . date("d/m/Y H:i", strtotime($mail->date)) . '</td>';
+            print '      <td style="text-align:right;">' . number_format($mail->size / 1000, 2) . 'Ko</td>';
+            print '      <td align="center">';
             if ($mail->flagged)
-                echo "<img src='" . DOL_URL_ROOT . "/dolimail/img/flagged.png' alt='flagged' />"; else
-                echo "<img src='" . DOL_URL_ROOT . "/dolimail/img/unflagged.png' alt='unflagged' />";
-            echo "</td>\n";
-            echo '<td>';
-            echo '<form name="link_' . $i . '" method="POST">';
-            echo '<table><tr><td>';
+                print '<img src="' . DOL_URL_ROOT . '/dolimail/img/flagged.png" alt="flagged" />'; else
+                print '<img src="' . DOL_URL_ROOT . '/dolimail/img/unflagged.png" alt="unflagged" />';
+            print '</td>';
+            print '<td>';
+            print '<form name="link_' . $i . '" method="POST">';
+            print '<table><tr><td>';
             $out = '';
             if ($conf->use_javascript_ajax)
                 $out .= ajax_multiautocompleter('reference_' . $i, array('reference_rowid_' . $i, 'reference_type_element_' . $i, 'reference_fk_socid_' . $i), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=' . $i) . "\n";
@@ -331,20 +333,18 @@ if (FALSE === $info) {
             print '">' . "\n";
             print '</td><td>';
             print '<a href="javascript:;" onclick="link_' . $i . '.submit();">';
-            echo img_picto('attacher', 'lock');
+            print img_picto('attacher', 'lock');
             print '</a>';
             print '</td></tr></table>';
             print '</form>';
             print '</td>';
-            echo "    </tr>\n";
+            print '</tr>';
         }
     }
-
-    echo "  </tbody>\n";
-    echo "</table>\n";
-    echo "<table style='width:100%;'>\n";
-    echo "    <tr>\n";
-    echo "      <th style='text-align:right;'>";
+    print '</table>';
+    print '<table style="width:100%;">';
+    print '    <tr>';
+    print '      <th style="text-align:right;">';
     $page_precedente = GETPOST("num_page") - 1;
     $page_suivante = GETPOST("num_page") + 1;
     if ($page_precedente > 0)
@@ -362,10 +362,11 @@ if (FALSE === $info) {
 
     if ($page_suivante < ceil($info->Nmsgs / $pagination))
         print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $page_suivante . '">Suivante</a> ';
-    echo "      </th>\n";
-    echo "    </tr>\n";
-    echo "</table>\n";
-    echo "</div>";
+    print '      </th>';
+    print '    </tr>';
+    print '</table>';
+    print '</div>';
+    print '<div style="clear:both;"></div>';
 }
 
 

@@ -54,6 +54,7 @@ if (!$res)
 // Load traductions files requiredby by page
 $langs->load("companies");
 $langs->load("other");
+$langs->load("dolimail@dolimail");
 
 // Get parameters
 $id = GETPOST('id', 'int');
@@ -91,6 +92,16 @@ if ($resql) {
 
 llxHeader('', 'Dolibarr Webmail', '');
 
+$head[0][0] = DOL_URL_ROOT . '/dolimail/index.php';
+$head[0][1] = $langs->trans("DolimailMailbox");
+$head[0][2] = 'mailbox';
+
+$head[1][0] = $_SERVER['PHP_SELF'];
+$head[1][1] = $langs->trans("DolimailDetail");
+$head[1][2] = 'detail';
+
+dol_fiche_head($head, 'detail', $langs->trans("Webmail"), 0, 'mailbox');
+
 // Connexion
 $mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}', $user->mailbox_imap_login, $user->mailbox_imap_password);
 
@@ -103,31 +114,40 @@ if (FALSE === $mbox) {
     $header = imap_rfc822_parse_headers($headerText);
 
     // REM: Attention s'il y a plusieurs sections
-    $corps = trim( utf8_encode( quoted_printable_decode(imap_fetchbody($mbox, $uid, 1, FT_UID))));
+    $corps = trim(utf8_encode(quoted_printable_decode(imap_fetchbody($mbox, $uid, 1, FT_UID))));
 }
 imap_close($mbox);
 
+print '<form name="link_0" method="POST">';
 print '<table>';
 print '<tr><td  width="30%" nowrap><span class="fieldrequired">' . $langs->trans("Rattacher à ") . '</span></td><td>';
 $out = '';
 if ($conf->use_javascript_ajax)
-    $out .= ajax_multiautocompleter('reference_0', array('reference_rowid_0', 'reference_type_element_0'), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=0') . "\n";
+    $out .= ajax_multiautocompleter('reference_0', array('reference_rowid_0', 'reference_type_element_0', 'reference_fk_socid_0'), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=0') . "\n";
 $out.= '<input id="reference_0" type="text" name="reference_0" value="' . GETPOST("reference_0");
 print $out . '">' . "\n";
-print '<input id="reference_rowid_0" type="hidden" name="reference_rowid_0" value="';
+print '<input id="reference_rowid_0" type="hidden" name="reference_rowid" value="';
 print GETPOST("reference_rowid_0");
 print '">' . "\n";
-print '<input id="reference_type_element_0" type="hidden" name="reference_type_element_0" value="';
+print '<input id="reference_type_element_0" type="hidden" name="reference_type_element" value="';
 print GETPOST("reference_type_element_0");
 print '">' . "\n";
-print '<input id="reference_fk_socid_0" type="hidden" name="reference_fk_socid_0" value="';
+print '<input id="reference_fk_socid_0" type="hidden" name="reference_fk_socid" value="';
 print GETPOST("reference_fk_socid_0");
 print '">' . "\n";
+print '<input id="reference_mail_uid_0" type="hidden" name="reference_mail_uid" value="';
+print $uid;
+print '">' . "\n";
+
+print '<a href="javascript:;" onclick="link_0.submit();">';
+print img_picto('attacher', 'lock');
+print '</a>';
 print '</td></tr>';
 print '</table>';
-print '<h2>'.$header->subject.'</h2>';
+print '</form>';
+print '<div class="titre">' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($header->subject)))) . '</div>';
 $from = $header->from;
-echo "Message de:" . $from[0]->personal . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]<br /><br />";
+echo "Message de:" . @iconv_mime_decode(imap_utf8($from[0]->personal)) . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]<br /><br />";
 echo nl2br($corps);
 
 // End of page

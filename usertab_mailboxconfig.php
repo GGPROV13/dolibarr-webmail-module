@@ -55,6 +55,7 @@ $langs->load("companies");
 $langs->load("members");
 $langs->load("bills");
 $langs->load("users");
+$langs->load("dolimail@dolimail");
 
 $fuser = new User($db);
 $fuser->fetch($id);
