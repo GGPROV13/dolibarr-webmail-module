@@ -52,6 +52,7 @@ if (!$res)
 // Change this following line to use the correct relative path from htdocs (do not remove DOL_DOCUMENT_ROOT)
 //require_once(DOL_DOCUMENT_ROOT."/../dev/skeleton/skeleton_class.class.php");
 // Load traductions files requiredby by page
+require_once(DOL_DOCUMENT_ROOT . "/dolimail/lib/lib_dolimail.php");
 $langs->load("companies");
 $langs->load("other");
 $langs->load("dolimail@dolimail");
@@ -105,6 +106,10 @@ dol_fiche_head($head, 'detail', $langs->trans("Webmail"), 0, 'mailbox');
 // Connexion
 $mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}', $user->mailbox_imap_login, $user->mailbox_imap_password);
 
+
+global $htmlmsg, $plainmsg, $charset, $attachments;
+
+
 if (FALSE === $mbox) {
     $info = FALSE;
     $err = 'La connexion a échoué. Vérifiez vos paramètres!';
@@ -113,8 +118,7 @@ if (FALSE === $mbox) {
     $headerText = imap_fetchHeader($mbox, $uid, FT_UID);
     $header = imap_rfc822_parse_headers($headerText);
 
-    // REM: Attention s'il y a plusieurs sections
-    $corps = trim(utf8_encode(quoted_printable_decode(imap_fetchbody($mbox, $uid, 1, FT_UID))));
+    getmsg($mbox, $uid);
 }
 imap_close($mbox);
 
@@ -147,8 +151,19 @@ print '</table>';
 print '</form>';
 print '<div class="titre">' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($header->subject)))) . '</div>';
 $from = $header->from;
-echo "Message de:" . @iconv_mime_decode(imap_utf8($from[0]->personal)) . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]<br /><br />";
-echo nl2br($corps);
+echo "Message de : " . @iconv_mime_decode(imap_utf8($from[0]->personal)) . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]<br /><br /><br />";
+
+//    print ($charset);
+if ($htmlmsg != '')
+    print ($htmlmsg);
+else
+    print utf8_encode(nl2br($plainmsg));
+if (sizeof($attachments) > 0) {
+    echo '<br /><hr />';
+    foreach ($attachments as $att_name => $value) {
+        print 'PJ : <a href="javascript:;" onclick="alert(\'Fonctionnalite en cours de developpement\');">' . $att_name . '</a><br />';
+    }
+}
 
 // End of page
 llxFooter();
