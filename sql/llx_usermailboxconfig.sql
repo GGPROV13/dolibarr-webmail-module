@@ -5,6 +5,7 @@ CREATE TABLE llx_usermailboxconfig
   mailbox_imap_password text NOT NULL,
   mailbox_imap_host varchar(255) NOT NULL,
   mailbox_imap_port varchar(8) NOT NULL,
+  mailbox_imap_ssl boolean NOT NULL DEFAULT 1,
   fk_user int(11) NOT NULL,
   PRIMARY KEY (`rowid`)
 )ENGINE=innodb;
