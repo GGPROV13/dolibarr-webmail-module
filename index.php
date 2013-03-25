@@ -207,7 +207,7 @@ $head[0][2] = 'mailbox';
 dol_fiche_head($head, 'mailbox', $langs->trans("Webmail"), 0, 'mailbox');
 
 // Connexion
-$mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}INBOX' . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
+$mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}' . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
 if (FALSE === $mbox) {
     $info = FALSE;
     $err = 'La connexion a échoué. Vérifiez vos paramètres!';
@@ -228,8 +228,12 @@ if (FALSE === $mbox) {
 if (FALSE === $info) {
     print $err;
 } else {
+    if ($folder == '')
+        $folder = 'INBOX';
+    $lbl_folder = array_reverse(explode('/',$folder));
+    $lbl_folder = str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $lbl_folder[0]));
     print '<div style="float:left;width:19%;">';
-    print '<div class="TitleImapDirectories"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans("Boite de réception") .' ('. $info->Nmsgs .') </a></div>';
+    print '<div class="TitleImapDirectories"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans($lbl_folder) .' ('. $info->Nmsgs .') </a></div>';
     print '<ul id="MenuDirectory">';
     foreach ($menus as &$m) {
         $cible = $m;
@@ -240,7 +244,10 @@ if (FALSE === $info) {
             $m = '&nbsp;&nbsp;' . str_replace($p . "/", '', $m);
         }
         print '<li class="ImapDirectory"><a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . urlencode(str_replace($user->mailbox_imap_ref, '', $cible)) . '">';
-        print str_replace($user->mailbox_imap_ref, '', $m);
+        $nb_decalage = mb_substr_count($m, 'INBOX.');
+        for ($decalage = 0; $decalage < $nb_decalage; $decalage++)
+            print '&nbsp;&nbsp;';
+        print $langs->trans(str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $m)));
         print '</a></li>';
     }
     print '</ul>';
@@ -252,7 +259,7 @@ if (FALSE === $info) {
     print '<div class="titre">';
     if (GETPOST('folder') == "") {
         print $langs->trans("Boite de réception");
-    } else {
+    } else {!
         print GETPOST('folder');
     }
     print ' (' . $info->Nmsgs . ')</div>';
