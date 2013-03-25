@@ -229,7 +229,7 @@ if (FALSE === $info) {
     print $err;
 } else {
     print '<div style="float:left;width:19%;">';
-    print '<div class="TitleImapDirectories"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans("Boite de réception") . '</a></div>';
+    print '<div class="TitleImapDirectories"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans("Boite de réception") .' ('. $info->Nmsgs .') </a></div>';
     print '<ul id="MenuDirectory">';
     foreach ($menus as &$m) {
         $cible = $m;
@@ -247,7 +247,7 @@ if (FALSE === $info) {
     print '</div>';
     print '<div style="float:left;width:79%">';
     print '<table style="width:100%;">';
-    print '    <tr>';
+    /*print '    <tr>';
     print '      <th style="text-align:left;">';
     print '<div class="titre">';
     if (GETPOST('folder') == "") {
@@ -257,7 +257,7 @@ if (FALSE === $info) {
     }
     print ' (' . $info->Nmsgs . ')</div>';
     print '      </th>';
-    print '    </tr>';
+    print '    </tr>';*/
     print '    <tr>';
     print '      <th style="text-align:right;">';
     $page_precedente = GETPOST("num_page") - 1;

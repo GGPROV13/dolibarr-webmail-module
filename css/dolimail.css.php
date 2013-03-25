@@ -68,6 +68,7 @@ span#selected
     background-color : #fff;
     border-radius : 5px;
     list-style-type : none;
+    margin-left : 0px;
 }
 
 .TitleImapDirectories
