@@ -1,4 +1,5 @@
 <?php
+
 /* Copyright (C) 2007-2010 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) ---Put here your own copyright and developer email---
  *
@@ -18,11 +19,10 @@
 
 /**
  *   	\file       dev/skeletons/skeleton_page.php
- *		\ingroup    mymodule othermodule1 othermodule2
- *		\brief      This file is an example of a php page
- *					Put here some comments
+ * 		\ingroup    mymodule othermodule1 othermodule2
+ * 		\brief      This file is an example of a php page
+ * 					Put here some comments
  */
-
 //if (! defined('NOREQUIREUSER'))  define('NOREQUIREUSER','1');
 //if (! defined('NOREQUIREDB'))    define('NOREQUIREDB','1');
 //if (! defined('NOREQUIRESOC'))   define('NOREQUIRESOC','1');
@@ -33,22 +33,28 @@
 //if (! defined('NOREQUIREHTML'))  define('NOREQUIREHTML','1');	// If we don't need to load the html.form.class.php
 //if (! defined('NOREQUIREAJAX'))  define('NOREQUIREAJAX','1');
 //if (! defined("NOLOGIN"))        define("NOLOGIN",'1');		// If this page is public (can be called outside logged session)
-
 // Change this following line to use the correct relative path (../, ../../, etc)
-$res=0;
-if (! $res && file_exists("../main.inc.php")) $res=@include("../main.inc.php");
-if (! $res && file_exists("../../main.inc.php")) $res=@include("../../main.inc.php");
-if (! $res && file_exists("../../../main.inc.php")) $res=@include("../../../main.inc.php");
-if (! $res && file_exists("../../../dolibarr/htdocs/main.inc.php")) $res=@include("../../../dolibarr/htdocs/main.inc.php");     // Used on dev env only
-if (! $res && file_exists("../../../../dolibarr/htdocs/main.inc.php")) $res=@include("../../../../dolibarr/htdocs/main.inc.php");   // Used on dev env only
-if (! $res && file_exists("../../../../../dolibarr/htdocs/main.inc.php")) $res=@include("../../../../../dolibarr/htdocs/main.inc.php");   // Used on dev env only
-if (! $res) die("Include of main fails");
+$res = 0;
+if (!$res && file_exists("../main.inc.php"))
+    $res = @include("../main.inc.php");
+if (!$res && file_exists("../../main.inc.php"))
+    $res = @include("../../main.inc.php");
+if (!$res && file_exists("../../../main.inc.php"))
+    $res = @include("../../../main.inc.php");
+if (!$res && file_exists("../../../dolibarr/htdocs/main.inc.php"))
+    $res = @include("../../../dolibarr/htdocs/main.inc.php");     // Used on dev env only
+if (!$res && file_exists("../../../../dolibarr/htdocs/main.inc.php"))
+    $res = @include("../../../../dolibarr/htdocs/main.inc.php");   // Used on dev env only
+if (!$res && file_exists("../../../../../dolibarr/htdocs/main.inc.php"))
+    $res = @include("../../../../../dolibarr/htdocs/main.inc.php");   // Used on dev env only
+if (!$res)
+    die("Include of main fails");
 // Change this following line to use the correct relative path from htdocs (do not remove DOL_DOCUMENT_ROOT)
 //require_once(DOL_DOCUMENT_ROOT."/../dev/skeleton/skeleton_class.class.php");
-require_once(DOL_DOCUMENT_ROOT.'/core/lib/usergroups.lib.php');
-require_once(DOL_DOCUMENT_ROOT.'/user/class/user.class.php');
+require_once(DOL_DOCUMENT_ROOT . '/core/lib/usergroups.lib.php');
+require_once(DOL_DOCUMENT_ROOT . '/user/class/user.class.php');
 
-$id = GETPOST('id','int');
+$id = GETPOST('id', 'int');
 $action = GETPOST('action');
 
 $langs->load("companies");
@@ -60,174 +66,189 @@ $langs->load("dolimail@dolimail");
 $fuser = new User($db);
 $fuser->fetch($id);
 
-		$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port ";
-		$sql.= " FROM ".MAIN_DB_PREFIX."usermailboxconfig as u";
-		$sql.= " WHERE u.fk_user = ".$id;
+$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port, mailbox_imap_ssl ";
+$sql.= " FROM " . MAIN_DB_PREFIX . "usermailboxconfig as u";
+$sql.= " WHERE u.fk_user = " . $id;
 
-		$resql = $db->query($sql);
-		if ($resql)
-		{
-			if ($db->num_rows($resql))
-			{
-				$obj = $db->fetch_object($resql);
+$resql = $db->query($sql);
+if ($resql) {
+    if ($db->num_rows($resql)) {
+        $obj = $db->fetch_object($resql);
 
-				$fuser->mailbox_imap_login = $obj->mailbox_imap_login;
-				$fuser->mailbox_imap_password = $obj->mailbox_imap_password;
-				$fuser->mailbox_imap_host = $obj->mailbox_imap_host;
+        $fuser->mailbox_imap_login = $obj->mailbox_imap_login;
+        $fuser->mailbox_imap_password = $obj->mailbox_imap_password;
+        $fuser->mailbox_imap_host = $obj->mailbox_imap_host;
         $fuser->mailbox_imap_port = $obj->mailbox_imap_port;
-			}
-			$db->free($resql);
-		}
+        $fuser->mailbox_imap_ssl = $obj->mailbox_imap_ssl;
+    }
+    $db->free($resql);
+}
 
 // If user is not user read and no permission to read other users, we stop
-if (($fuser->id != $user->id) && (! $user->rights->user->user->lire)) accessforbidden();
+if (($fuser->id != $user->id) && (!$user->rights->user->user->lire))
+    accessforbidden();
 
 // Security check
-$socid=0;
-if ($user->societe_id > 0) $socid = $user->societe_id;
-$feature2 = (($socid && $user->rights->user->self->creer)?'':'user');
-if ($user->id == $id) $feature2=''; // A user can always read its own card
+$socid = 0;
+if ($user->societe_id > 0)
+    $socid = $user->societe_id;
+$feature2 = (($socid && $user->rights->user->self->creer) ? '' : 'user');
+if ($user->id == $id)
+    $feature2 = ''; // A user can always read its own card
 $result = restrictedArea($user, 'user', $id, '&user', $feature2);
 
-/******************************************************************************/
+/* * *************************************************************************** */
 /*                     Actions                                                */
-/******************************************************************************/
+/* * *************************************************************************** */
 
-if ($action == 'update' && $user->rights->user->user->creer && ! $_POST["cancel"])
-{
-	$db->begin();
+if ($action == 'update' && $user->rights->user->user->creer && !$_POST["cancel"]) {
+    $db->begin();
 
-	$fuser->mailbox_imap_login    = $_POST["mailbox_imap_login"];
-	$fuser->mailbox_imap_password = $_POST["mailbox_imap_password"];
-	$fuser->mailbox_imap_host    = $_POST["mailbox_imap_host"];
-	$fuser->mailbox_imap_port = $_POST["mailbox_imap_port"];
+    $fuser->mailbox_imap_login = $_POST["mailbox_imap_login"];
+    $fuser->mailbox_imap_password = $_POST["mailbox_imap_password"];
+    $fuser->mailbox_imap_host = $_POST["mailbox_imap_host"];
+    $fuser->mailbox_imap_port = $_POST["mailbox_imap_port"];
+    $fuser->mailbox_imap_ssl = $_POST["mailbox_imap_ssl"];
 
 
-		$sql = "DELETE FROM ".MAIN_DB_PREFIX."usermailboxconfig";
-		$sql .= " WHERE fk_user = ".$id;
+    $sql = "DELETE FROM " . MAIN_DB_PREFIX . "usermailboxconfig";
+    $sql .= " WHERE fk_user = " . $id;
 
-		$result = $db->query($sql);
+    $result = $db->query($sql);
 
-		$sql = "INSERT INTO ".MAIN_DB_PREFIX."usermailboxconfig";
-		$sql .= " (fk_user,mailbox_imap_login,mailbox_imap_password,mailbox_imap_host,mailbox_imap_port)";
-		$sql .= " VALUES (".$id;
-		$sql .= ", '". $fuser->mailbox_imap_login ."'";
-		$sql .= ", '". $fuser->mailbox_imap_password ."'";
-		$sql .= ", '". $fuser->mailbox_imap_host ."'";
-		$sql .= ", '". $fuser->mailbox_imap_port."')";
+    $sql = "INSERT INTO " . MAIN_DB_PREFIX . "usermailboxconfig";
+    $sql .= " (fk_user,mailbox_imap_login,mailbox_imap_password,mailbox_imap_host,mailbox_imap_port,mailbox_imap_ssl)";
+    $sql .= " VALUES (" . $id;
+    $sql .= ", '" . $fuser->mailbox_imap_login . "'";
+    $sql .= ", '" . $fuser->mailbox_imap_password . "'";
+    $sql .= ", '" . $fuser->mailbox_imap_host . "'";
+    $sql .= ", '" . $fuser->mailbox_imap_port . "'";
+    $sql .= ", '" . $fuser->mailbox_imap_ssl . "')";
 
-		$res = $db->query($sql);
+    $res = $db->query($sql);
 
-	if ($res < 0)
-	{
-		$mesg='<div class="error">'.$adh->error.'</div>';
-		$db->rollback();
-	}
-	else
-	{
-		$db->commit();
-	}
+    if ($res < 0) {
+        $mesg = '<div class="error">' . $adh->error . '</div>';
+        $db->rollback();
+    } else {
+        $db->commit();
+    }
 }
 
 
 
-/******************************************************************************/
+/* * *************************************************************************** */
 /* Affichage fiche                                                            */
-/******************************************************************************/
+/* * *************************************************************************** */
 
 llxHeader();
 
 $form = new Form($db);
 
-if ($id)
-{
-	$head = user_prepare_head($fuser);
+if ($id) {
+    $head = user_prepare_head($fuser);
 
-	$title = $langs->trans("User");
-	dol_fiche_head($head, 'mailboxconfig', $title, 0, 'user');
+    $title = $langs->trans("User");
+    dol_fiche_head($head, 'mailboxconfig', $title, 0, 'user');
 
-	if ($msg) print '<div class="error">'.$msg.'</div>';
+    if ($msg)
+        print '<div class="error">' . $msg . '</div>';
 
-	print "<form method=\"post\" action=\"usertab_mailboxconfig.php\">";
-	print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
-	print '<input type="hidden" name="id" value="'.$id.'">';
-	print '<input type="hidden" name="action" value="update">';
+    print "<form method=\"post\" action=\"usertab_mailboxconfig.php\">";
+    print '<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">';
+    print '<input type="hidden" name="id" value="' . $id . '">';
+    print '<input type="hidden" name="action" value="update">';
 
     print '<table class="border" width="100%">';
 
     // Reference
-	print '<tr><td width="20%">'.$langs->trans('Ref').'</td>';
-	print '<td colspan="3">';
-	print $form->showrefnav($fuser,'id','',$user->rights->user->user->lire || $user->admin);
-	print '</td>';
-	print '</tr>';
+    print '<tr><td width="20%">' . $langs->trans('Ref') . '</td>';
+    print '<td colspan="3">';
+    print $form->showrefnav($fuser, 'id', '', $user->rights->user->user->lire || $user->admin);
+    print '</td>';
+    print '</tr>';
 
     // Nom
-    print '<tr><td>'.$langs->trans("Lastname").' '.$langs->trans("Firstname").'</td><td class="valeur" colspan="3">'.$fuser->nom.'&nbsp;'.$fuser->prenom.'&nbsp;</td></tr>';
+    print '<tr><td>' . $langs->trans("Lastname") . ' ' . $langs->trans("Firstname") . '</td><td class="valeur" colspan="3">' . $fuser->nom . '&nbsp;' . $fuser->prenom . '&nbsp;</td></tr>';
 
     // Login
-    print '<tr><td>'.$langs->trans("IMAP Login").'</td><td class="valeur" colspan="3">';
-    if ($action=='edit')
-      print '<input size="30" type="text" class="flat" name="mailbox_imap_login" value="'.$fuser->mailbox_imap_login.'">';
+    print '<tr><td>' . $langs->trans("IMAP Login") . '</td><td class="valeur" colspan="3">';
+    if ($action == 'edit')
+        print '<input size="30" type="text" class="flat" name="mailbox_imap_login" value="' . $fuser->mailbox_imap_login . '">';
     else
-      print $fuser->mailbox_imap_login.'&nbsp;';
+        print $fuser->mailbox_imap_login . '&nbsp;';
     print '</td></tr>';
     // Server
-    print '<tr><td>'.$langs->trans("IMAP Password").'</td><td class="valeur" colspan="3">';
-    if ($action=='edit')
-    {
-                print '<input size="12" maxlength="32" type="password" class="flat" name="mailbox_imap_password" value="'.$fuser->mailbox_imap_password.'">';
+    print '<tr><td>' . $langs->trans("IMAP Password") . '</td><td class="valeur" colspan="3">';
+    if ($action == 'edit') {
+        print '<input size="12" maxlength="32" type="password" class="flat" name="mailbox_imap_password" value="' . $fuser->mailbox_imap_password . '">';
+    } else {
+        if ($fuser->mailbox_imap_password)
+            print preg_replace('/./i', '*', $fuser->mailbox_imap_password);
+        else
+            print $langs->trans("Hidden");
     }
+    print '</td></tr>';
+    // Server
+    print '<tr><td>' . $langs->trans("IMAP Server") . '</td><td class="valeur" colspan="3">';
+    if ($action == 'edit')
+        print '<input size="30" type="text" class="flat" name="mailbox_imap_host" value="' . $fuser->mailbox_imap_host . '">';
     else
-    {
-                if ($fuser->mailbox_imap_password) print preg_replace('/./i','*',$fuser->mailbox_imap_password);
-                else print $langs->trans("Hidden");
+        print $fuser->mailbox_imap_host . '&nbsp;';
+    print '</td></tr>';
+    // Server
+    print '<tr><td>' . $langs->trans("IMAP Port") . '</td><td class="valeur" colspan="3">';
+    if ($action == 'edit')
+        print '<input size="30" type="text" class="flat" name="mailbox_imap_port" value="' . $fuser->mailbox_imap_port . '">';
+    else
+        print $fuser->mailbox_imap_port . '&nbsp;';
+    print '</td></tr>';
+    print '<tr><td>' . $langs->trans("IMAP SSL") . '</td><td class="valeur" colspan="3">';
+    if ($action == 'edit') {
+        print '<select name="mailbox_imap_ssl" >';
+        print '<option value="1" ';
+        if ($fuser->mailbox_imap_ssl)
+            print 'selected ';
+        print '">Oui</option>';
+        print '<option value="0" ';
+        if (!$fuser->mailbox_imap_ssl)
+            print 'selected ';
+        print '">Non</option>';
+        print '</select>';
     }
-    print '</td></tr>';
-    // Server
-    print '<tr><td>'.$langs->trans("IMAP Server").'</td><td class="valeur" colspan="3">';
-    if ($action=='edit')
-      print '<input size="30" type="text" class="flat" name="mailbox_imap_host" value="'.$fuser->mailbox_imap_host.'">';
-    else
-      print $fuser->mailbox_imap_host.'&nbsp;';
-    print '</td></tr>';
-    // Server
-    print '<tr><td>'.$langs->trans("IMAP Port").'</td><td class="valeur" colspan="3">';
-    if ($action=='edit')
-      print '<input size="30" type="text" class="flat" name="mailbox_imap_port" value="'.$fuser->mailbox_imap_port.'">';
-    else
-      print $fuser->mailbox_imap_port.'&nbsp;';
+    else {
+        if ($fuser->mailbox_imap_ssl)
+            print 'Oui';
+        if (!$fuser->mailbox_imap_ssl)
+            print 'Non';
+    }
     print '</td></tr>';
 
 
     print "</table>";
 
-	if ($action == 'edit')
-	{
-		print '<center><br>';
-		print '<input type="submit" class="button" name="update" value="'.$langs->trans("Save").'">';
-		print '&nbsp; &nbsp;';
-		print '<input type="submit" class="button" name="cancel" value="'.$langs->trans("Cancel").'">';
-		print '</center>';
-	}
+    if ($action == 'edit') {
+        print '<center><br>';
+        print '<input type="submit" class="button" name="update" value="' . $langs->trans("Save") . '">';
+        print '&nbsp; &nbsp;';
+        print '<input type="submit" class="button" name="cancel" value="' . $langs->trans("Cancel") . '">';
+        print '</center>';
+    }
 
-	print "</form>\n";
+    print "</form>\n";
 
 
     /*
-    * Actions
-    */
+     * Actions
+     */
     print '</div>';
     print '<div class="tabsAction">';
 
-    if ($user->rights->user->user->creer && $action != 'edit')
-    {
-        print "<a class=\"butAction\" href=\"usertab_mailboxconfig.php?id=".$id."&amp;action=edit\">".$langs->trans('Modify')."</a>";
+    if ($user->rights->user->user->creer && $action != 'edit') {
+        print "<a class=\"butAction\" href=\"usertab_mailboxconfig.php?id=" . $id . "&amp;action=edit\">" . $langs->trans('Modify') . "</a>";
     }
 
     print "</div>";
-
-
 }
 
 $db->close();

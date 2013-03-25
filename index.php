@@ -83,7 +83,7 @@ if ($user->societe_id > 0) {
 
 
 
-$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port ";
+$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port, mailbox_imap_ssl ";
 $sql.= " FROM " . MAIN_DB_PREFIX . "usermailboxconfig as u";
 $sql.= " WHERE u.fk_user = " . $user->id;
 
@@ -97,13 +97,16 @@ if ($resql) {
         $user->mailbox_imap_host = $obj->mailbox_imap_host;
         $user->mailbox_imap_port = $obj->mailbox_imap_port;
         $user->mailbox_imap_ref = "{" . $user->mailbox_imap_host . "}";
+        $user->mailbox_imap_connector_url = '{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port;
+        if ($obj->mailbox_imap_ssl) $user->mailbox_imap_connector_url .= '/ssl';
+        $user->mailbox_imap_connector_url .=  '}';
     }
     $db->free($resql);
 }
 
 if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('reference_type_element')) {
 
-    $mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}', $user->mailbox_imap_login, $user->mailbox_imap_password);
+    $mbox = imap_open($user->mailbox_imap_connector_url, $user->mailbox_imap_login, $user->mailbox_imap_password);
 
     if (FALSE === $mbox) {
         $info = FALSE;
@@ -207,7 +210,7 @@ $head[0][2] = 'mailbox';
 dol_fiche_head($head, 'mailbox', $langs->trans("Webmail"), 0, 'mailbox@dolimail');
 
 // Connexion
-$mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}' . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
+$mbox = imap_open($user->mailbox_imap_connector_url . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
 if (FALSE === $mbox) {
     $info = FALSE;
     $err = 'La connexion a échoué. Vérifiez vos paramètres!';
