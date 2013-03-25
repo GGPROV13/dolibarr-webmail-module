@@ -55,6 +55,12 @@ font-weight: normal;
 font-weight: bold;
 }
 
+span#selected
+{
+    color : blue;
+    text-weight : bold;
+}
+
 
 <?php
 if (is_object($db)) $db->close();

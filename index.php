@@ -96,7 +96,7 @@ if ($resql) {
         $user->mailbox_imap_password = $obj->mailbox_imap_password;
         $user->mailbox_imap_host = $obj->mailbox_imap_host;
         $user->mailbox_imap_port = $obj->mailbox_imap_port;
-        $user->mailbox_imap_ref = "{" . $user->mailbox_imap_host . "}INBOX";
+        $user->mailbox_imap_ref = "{" . $user->mailbox_imap_host . "}";
     }
     $db->free($resql);
 }
@@ -208,7 +208,6 @@ dol_fiche_head($head, 'mailbox', $langs->trans("Webmail"), 0, 'mailbox');
 
 // Connexion
 $mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}INBOX' . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
-
 if (FALSE === $mbox) {
     $info = FALSE;
     $err = 'La connexion a échoué. Vérifiez vos paramètres!';
@@ -269,7 +268,7 @@ if (FALSE === $info) {
         if ($num_page != GETPOST("num_page"))
             print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $num_page . '">' . $num_page . '</a> ';
         else
-            print $num_page;
+            print '<span id="selected">'.$num_page.'</span>';
 
         if ($num_page < ceil($info->Nmsgs / $pagination))
             print ', ';
