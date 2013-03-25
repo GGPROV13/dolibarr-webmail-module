@@ -61,6 +61,19 @@ span#selected
     text-weight : bold;
 }
 
+.ImapDirectory
+{
+    padding : 5px 5px;
+    margin : 1px;
+    background-color : #fff;
+    border-radius : 5px;
+    list-style-type : none;
+}
+
+.TitleImapDirectories
+{
+    font-size : 1.2em;
+}
 
 <?php
 if (is_object($db)) $db->close();

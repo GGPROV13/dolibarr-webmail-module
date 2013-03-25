@@ -229,7 +229,8 @@ if (FALSE === $info) {
     print $err;
 } else {
     print '<div style="float:left;width:19%;">';
-    print '<div class="titre"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans("Boite de réception") . '</a></div>';
+    print '<div class="TitleImapDirectories"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans("Boite de réception") . '</a></div>';
+    print '<ul id="MenuDirectory">';
     foreach ($menus as &$m) {
         $cible = $m;
         # Subfolders
@@ -238,11 +239,11 @@ if (FALSE === $info) {
             $p = array_shift($ex);
             $m = '&nbsp;&nbsp;' . str_replace($p . "/", '', $m);
         }
-        print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . urlencode(str_replace($user->mailbox_imap_ref, '', $cible)) . '">';
+        print '<li class="ImapDirectory"><a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . urlencode(str_replace($user->mailbox_imap_ref, '', $cible)) . '">';
         print str_replace($user->mailbox_imap_ref, '', $m);
-        print '</a>';
-        print '<br />';
+        print '</a></li>';
     }
+    print '</ul>';
     print '</div>';
     print '<div style="float:left;width:79%">';
     print '<table style="width:100%;">';
