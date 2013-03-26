@@ -68,7 +68,7 @@ if ($user->societe_id > 0) {
 
 
 
-$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port ";
+$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port, mailbox_imap_ssl  ";
 $sql.= " FROM " . MAIN_DB_PREFIX . "usermailboxconfig as u";
 $sql.= " WHERE u.fk_user = " . $user->id;
 
@@ -81,6 +81,9 @@ if ($resql) {
         $user->mailbox_imap_password = $obj->mailbox_imap_password;
         $user->mailbox_imap_host = $obj->mailbox_imap_host;
         $user->mailbox_imap_port = $obj->mailbox_imap_port;
+        $user->mailbox_imap_connector_url = '{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port;
+        if ($obj->mailbox_imap_ssl) $user->mailbox_imap_connector_url .= '/ssl';
+        $user->mailbox_imap_connector_url .=  '}';
     }
     $db->free($resql);
 }
@@ -104,7 +107,7 @@ $head[1][2] = 'detail';
 dol_fiche_head($head, 'detail', $langs->trans("Webmail"), 0, 'mailbox');
 
 // Connexion
-$mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}', $user->mailbox_imap_login, $user->mailbox_imap_password);
+$mbox = imap_open($user->mailbox_imap_connector_url, $user->mailbox_imap_login, $user->mailbox_imap_password);
 
 
 global $htmlmsg, $plainmsg, $charset, $attachments;
@@ -121,7 +124,16 @@ if (FALSE === $mbox) {
     getmsg($mbox, $uid);
 }
 imap_close($mbox);
-
+switch($charset)
+{
+    case 'ISO-8859-1':
+    case 'ISO-8859-15':
+        $htmlmsg = utf8_encode($htmlmsg);
+        $plainmsg = utf8_encode(nl2br($plainmsg));
+        break;
+    default:
+        $plainmsg = nl2br($plainmsg);        
+}
 print '<form name="link_0" method="POST">';
 print '<table>';
 print '<tr><td  width="30%" nowrap><span class="fieldrequired">' . $langs->trans("Rattacher à ") . '</span></td><td>';
@@ -153,11 +165,10 @@ print '<div class="titre">' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_deco
 $from = $header->from;
 echo "Message de : " . @iconv_mime_decode(imap_utf8($from[0]->personal)) . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]<br /><br /><br />";
 
-//    print ($charset);
 if ($htmlmsg != '')
     print ($htmlmsg);
 else
-    print utf8_encode(nl2br($plainmsg));
+    print ($plainmsg);
 if (sizeof($attachments) > 0) {
     echo '<br /><hr />';
     foreach ($attachments as $att_name => $value) {

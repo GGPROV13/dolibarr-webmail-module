@@ -83,7 +83,7 @@ if ($user->societe_id > 0) {
 
 
 
-$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port ";
+$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port, mailbox_imap_ssl ";
 $sql.= " FROM " . MAIN_DB_PREFIX . "usermailboxconfig as u";
 $sql.= " WHERE u.fk_user = " . $user->id;
 
@@ -97,13 +97,16 @@ if ($resql) {
         $user->mailbox_imap_host = $obj->mailbox_imap_host;
         $user->mailbox_imap_port = $obj->mailbox_imap_port;
         $user->mailbox_imap_ref = "{" . $user->mailbox_imap_host . "}";
+        $user->mailbox_imap_connector_url = '{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port;
+        if ($obj->mailbox_imap_ssl) $user->mailbox_imap_connector_url .= '/ssl';
+        $user->mailbox_imap_connector_url .=  '}';
     }
     $db->free($resql);
 }
 
 if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('reference_type_element')) {
 
-    $mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}', $user->mailbox_imap_login, $user->mailbox_imap_password);
+    $mbox = imap_open($user->mailbox_imap_connector_url, $user->mailbox_imap_login, $user->mailbox_imap_password);
 
     if (FALSE === $mbox) {
         $info = FALSE;
@@ -204,10 +207,10 @@ $head[0][0] = DOL_URL_ROOT . '/dolimail/index.php';
 $head[0][1] = $langs->trans("DolimailMailbox");
 $head[0][2] = 'mailbox';
 
-dol_fiche_head($head, 'mailbox', $langs->trans("Webmail"), 0, 'mailbox');
+dol_fiche_head($head, 'mailbox', $langs->trans("Webmail"), 0, 'mailbox@dolimail');
 
 // Connexion
-$mbox = imap_open('{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port . '}INBOX' . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
+$mbox = imap_open($user->mailbox_imap_connector_url . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
 if (FALSE === $mbox) {
     $info = FALSE;
     $err = 'La connexion a échoué. Vérifiez vos paramètres!';
@@ -228,8 +231,12 @@ if (FALSE === $mbox) {
 if (FALSE === $info) {
     print $err;
 } else {
+    if ($folder == '')
+        $folder = 'INBOX';
+    $lbl_folder = array_reverse(explode('/', $folder));
+    $lbl_folder = str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $lbl_folder[0]));
     print '<div style="float:left;width:19%;">';
-    print '<div class="TitleImapDirectories"><a href="' . DOL_URL_ROOT . '/dolimail/index.php">' . $langs->trans("Boite de réception") .' ('. $info->Nmsgs .') </a></div>';
+    print '<div class="TitleImapDirectories"><a href="' . dol_buildpath('/dolimail/index.php', 1) . '">' . $langs->trans($lbl_folder) . ' (' . $info->Nmsgs . ') </a></div>';
     print '<ul id="MenuDirectory">';
     foreach ($menus as &$m) {
         $cible = $m;
@@ -239,44 +246,47 @@ if (FALSE === $info) {
             $p = array_shift($ex);
             $m = '&nbsp;&nbsp;' . str_replace($p . "/", '', $m);
         }
-        print '<li class="ImapDirectory"><a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . urlencode(str_replace($user->mailbox_imap_ref, '', $cible)) . '">';
-        print str_replace($user->mailbox_imap_ref, '', $m);
+        print '<li class="ImapDirectory"><a href="' . dol_buildpath('/dolimail/index.php', 1) . '?folder=' . urlencode(str_replace($user->mailbox_imap_ref, '', $cible)) . '">';
+        $nb_decalage = mb_substr_count($m, 'INBOX.');
+        for ($decalage = 0; $decalage < $nb_decalage; $decalage++)
+            print '&nbsp;&nbsp;';
+        print $langs->trans(str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $m)));
         print '</a></li>';
     }
     print '</ul>';
     print '</div>';
     print '<div style="float:left;width:79%">';
     print '<table style="width:100%;">';
-    /*print '    <tr>';
-    print '      <th style="text-align:left;">';
-    print '<div class="titre">';
-    if (GETPOST('folder') == "") {
-        print $langs->trans("Boite de réception");
-    } else {
-        print GETPOST('folder');
-    }
-    print ' (' . $info->Nmsgs . ')</div>';
-    print '      </th>';
-    print '    </tr>';*/
+    /* print '    <tr>';
+      print '      <th style="text-align:left;">';
+      print '<div class="titre">';
+      if (GETPOST('folder') == "") {
+      print $langs->trans("Boite de réception");
+      } else {!
+      print GETPOST('folder');
+      }
+      print ' (' . $info->Nmsgs . ')</div>';
+      print '      </th>';
+      print '    </tr>'; */
     print '    <tr>';
     print '      <th style="text-align:right;">';
     $page_precedente = GETPOST("num_page") - 1;
     $page_suivante = GETPOST("num_page") + 1;
     if ($page_precedente > 0)
-        print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $page_precedente . '">Precedente</a> ';
+        print '<a href="' . dol_buildpath('/dolimail/index.php', 1) . '?folder=' . GETPOST('folder') . '&num_page=' . $page_precedente . '">Precedente</a> ';
 
     for ($num_page = 1; $num_page <= ceil($info->Nmsgs / $pagination); $num_page++) {
         if ($num_page != GETPOST("num_page"))
-            print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $num_page . '">' . $num_page . '</a> ';
+            print '<a href="' . dol_buildpath('/dolimail/index.php', 1) . '?folder=' . GETPOST('folder') . '&num_page=' . $num_page . '">' . $num_page . '</a> ';
         else
-            print '<span id="selected">'.$num_page.'</span>';
+            print '<span id="selected">' . $num_page . '</span>';
 
         if ($num_page < ceil($info->Nmsgs / $pagination))
             print ', ';
     }
 
     if ($page_suivante < ceil($info->Nmsgs / $pagination))
-        print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $page_suivante . '">Suivante</a> ';
+        print '<a href="' . dol_buildpath('/dolimail/index.php', 1) . '?folder=' . GETPOST('folder') . '&num_page=' . $page_suivante . '">Suivante</a> ';
     print '      </th>';
     print '    </tr>';
     print '</table>';
@@ -303,16 +313,32 @@ if (FALSE === $info) {
             print '">';
             print '      <td style="text-align:center;width:30px;">';
             if ($mail->answered)
-                print '        <img src="' . DOL_URL_ROOT . '/dolimail/img/answered.png" alt="answered" />';
+                print img_picto('answered', 'answered@dolimail');
+            if ($mail->size < 1024)
+            {
+                $unit = '&nbsp;o.';
+            }
+            else if ($mail->size/1024 > 1024)
+            {
+                $mail->size = $mail->size/1024/1024;
+                $unit = '&nbsp;Mo.';
+            }
+            else
+            {
+                $mail->size = $mail->size/1024;
+                $unit = '&nbsp;ko.';
+            }
             print '      </td>';
-            print '      <td><a href="' . DOL_URL_ROOT . '/dolimail/detail.php?uid=' . $mail->uid . '">' . trim(utf8_encode(@iconv_mime_decode(imap_utf8($mail->subject)))) . '</a></td>';
+            print '      <td><a href="' . dol_buildpath('/dolimail/detail.php', 1) . '?uid=' . $mail->uid . '">' . trim(utf8_encode(@iconv_mime_decode(imap_utf8($mail->subject)))) . '</a></td>';
             print '      <td>' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($mail->from)))) . '</td>';
             print '      <td style="text-align:center;width: 115px;">' . date("d/m/Y H:i", strtotime($mail->date)) . '</td>';
-            print '      <td style="text-align:right;">' . number_format($mail->size / 1000, 2) . 'Ko</td>';
+            print '      <td style="text-align:right;">' . number_format($mail->size, 2) . $unit.'</td>';
             print '      <td align="center">';
+            
             if ($mail->flagged)
-                print '<img src="' . DOL_URL_ROOT . '/dolimail/img/flagged.png" alt="flagged" />'; else
-                print '<img src="' . DOL_URL_ROOT . '/dolimail/img/unflagged.png" alt="unflagged" />';
+                print img_picto('flagged', 'flagged@dolimail');
+            else
+                print img_picto('unflagged', 'unflagged@dolimail');
             print '</td>';
             print '<td>';
             print '<form name="link_' . $i . '" method="POST">';
@@ -348,11 +374,11 @@ if (FALSE === $info) {
     $page_precedente = GETPOST("num_page") - 1;
     $page_suivante = GETPOST("num_page") + 1;
     if ($page_precedente > 0)
-        print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $page_precedente . '">Precedente</a> ';
+        print '<a href="' . dol_buildpath('/dolimail/index.php', 1) . '?folder=' . GETPOST('folder') . '&num_page=' . $page_precedente . '">Precedente</a> ';
 
     for ($num_page = 1; $num_page <= ceil($info->Nmsgs / $pagination); $num_page++) {
         if ($num_page != GETPOST("num_page"))
-            print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $num_page . '">' . $num_page . '</a> ';
+            print '<a href="' . dol_buildpath('/dolimail/index.php', 1) . '?folder=' . GETPOST('folder') . '&num_page=' . $num_page . '">' . $num_page . '</a> ';
         else
             print $num_page;
 
@@ -361,7 +387,7 @@ if (FALSE === $info) {
     }
 
     if ($page_suivante < ceil($info->Nmsgs / $pagination))
-        print '<a href="' . DOL_URL_ROOT . '/dolimail/index.php?folder=' . GETPOST('folder') . '&num_page=' . $page_suivante . '">Suivante</a> ';
+        print '<a href="' . dol_buildpath('/dolimail/index.php', 1) . '?folder=' . GETPOST('folder') . '&num_page=' . $page_suivante . '">Suivante</a> ';
     print '      </th>';
     print '    </tr>';
     print '</table>';
