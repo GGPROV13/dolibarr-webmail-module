@@ -104,13 +104,10 @@ $head[1][0] = $_SERVER['PHP_SELF'];
 $head[1][1] = $langs->trans("DolimailDetail");
 $head[1][2] = 'detail';
 
-dol_fiche_head($head, 'detail', $langs->trans("Webmail"), 0, 'mailbox');
+dol_fiche_head($head, 'detail', $langs->trans("Webmail"), 0, 'mailbox@dolimail');
 
 // Connexion
 $mbox = imap_open($user->mailbox_imap_connector_url, $user->mailbox_imap_login, $user->mailbox_imap_password);
-
-
-global $htmlmsg, $plainmsg, $charset, $attachments;
 
 
 if (FALSE === $mbox) {
@@ -121,7 +118,7 @@ if (FALSE === $mbox) {
     $headerText = imap_fetchHeader($mbox, $uid, FT_UID);
     $header = imap_rfc822_parse_headers($headerText);
 
-    getmsg($mbox, $uid);
+    list($charset, $htmlmsg, $plainmsg, $attachments) = getmsg($mbox, $uid);
 }
 imap_close($mbox);
 switch($charset)
