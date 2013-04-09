@@ -52,7 +52,8 @@ if (!$res)
 // Change this following line to use the correct relative path from htdocs (do not remove DOL_DOCUMENT_ROOT)
 //require_once(DOL_DOCUMENT_ROOT."/../dev/skeleton/skeleton_class.class.php");
 // Load traductions files requiredby by page
-require_once(DOL_DOCUMENT_ROOT . "/dolimail/lib/lib_dolimail.php");
+require_once(dirname(__FILE__) . '/lib/lib_dolimail.php');
+require_once(dirname(__FILE__) . '/class/usermailboxconfig.class.php');
 $langs->load("companies");
 $langs->load("other");
 $langs->load("dolimail@dolimail");
@@ -67,26 +68,16 @@ if ($user->societe_id > 0) {
 }
 
 
+$mailboxconfig = new Usermailboxconfig($db);
+$mailboxconfig->fetch_from_user($user->id);
 
-$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port, mailbox_imap_ssl  ";
-$sql.= " FROM " . MAIN_DB_PREFIX . "usermailboxconfig as u";
-$sql.= " WHERE u.fk_user = " . $user->id;
+$user->mailbox_imap_login = $mailboxconfig->mailbox_imap_login;
+$user->mailbox_imap_password = $mailboxconfig->mailbox_imap_password;
+$user->mailbox_imap_host = $mailboxconfig->mailbox_imap_host;
+$user->mailbox_imap_port = $mailboxconfig->mailbox_imap_port;
+$user->mailbox_imap_ref = $mailboxconfig->get_ref();
+$user->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
 
-$resql = $db->query($sql);
-if ($resql) {
-    if ($db->num_rows($resql)) {
-        $obj = $db->fetch_object($resql);
-
-        $user->mailbox_imap_login = $obj->mailbox_imap_login;
-        $user->mailbox_imap_password = $obj->mailbox_imap_password;
-        $user->mailbox_imap_host = $obj->mailbox_imap_host;
-        $user->mailbox_imap_port = $obj->mailbox_imap_port;
-        $user->mailbox_imap_connector_url = '{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port;
-        if ($obj->mailbox_imap_ssl) $user->mailbox_imap_connector_url .= '/ssl';
-        $user->mailbox_imap_connector_url .=  '}';
-    }
-    $db->free($resql);
-}
 
 /* * *************************************************
  * VIEW

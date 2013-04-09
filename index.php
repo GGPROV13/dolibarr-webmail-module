@@ -50,10 +50,11 @@ if (!$res && file_exists("../../../../../dolibarr/htdocs/main.inc.php"))
 if (!$res)
     die("Include of main fails");
 
-
 require_once(DOL_DOCUMENT_ROOT . "/core/lib/agenda.lib.php");
 require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/cactioncomm.class.php");
 require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/actioncomm.class.php");
+require_once(dirname(__FILE__) . '/class/usermailboxconfig.class.php');
+
 
 // Change this following line to use the correct relative path from htdocs (do not remove DOL_DOCUMENT_ROOT)
 //require_once(DOL_DOCUMENT_ROOT."/../dev/skeleton/skeleton_class.class.php");
@@ -81,28 +82,16 @@ if ($user->societe_id > 0) {
     //accessforbidden();
 }
 
+$mailboxconfig = new Usermailboxconfig($db);
+$mailboxconfig->fetch_from_user($user->id);
 
+$user->mailbox_imap_login = $mailboxconfig->mailbox_imap_login;
+$user->mailbox_imap_password = $mailboxconfig->mailbox_imap_password;
+$user->mailbox_imap_host = $mailboxconfig->mailbox_imap_host;
+$user->mailbox_imap_port = $mailboxconfig->mailbox_imap_port;
+$user->mailbox_imap_ref = $mailboxconfig->get_ref();
+$user->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
 
-$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port, mailbox_imap_ssl ";
-$sql.= " FROM " . MAIN_DB_PREFIX . "usermailboxconfig as u";
-$sql.= " WHERE u.fk_user = " . $user->id;
-
-$resql = $db->query($sql);
-if ($resql) {
-    if ($db->num_rows($resql)) {
-        $obj = $db->fetch_object($resql);
-
-        $user->mailbox_imap_login = $obj->mailbox_imap_login;
-        $user->mailbox_imap_password = $obj->mailbox_imap_password;
-        $user->mailbox_imap_host = $obj->mailbox_imap_host;
-        $user->mailbox_imap_port = $obj->mailbox_imap_port;
-        $user->mailbox_imap_ref = "{" . $user->mailbox_imap_host . "}";
-        $user->mailbox_imap_connector_url = '{' . $user->mailbox_imap_host . ':' . $user->mailbox_imap_port;
-        if ($obj->mailbox_imap_ssl) $user->mailbox_imap_connector_url .= '/ssl';
-        $user->mailbox_imap_connector_url .=  '}';
-    }
-    $db->free($resql);
-}
 
 if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('reference_type_element')) {
 
@@ -257,17 +246,6 @@ if (FALSE === $info) {
     print '</div>';
     print '<div style="float:left;width:79%">';
     print '<table style="width:100%;">';
-    /* print '    <tr>';
-      print '      <th style="text-align:left;">';
-      print '<div class="titre">';
-      if (GETPOST('folder') == "") {
-      print $langs->trans("Boite de réception");
-      } else {!
-      print GETPOST('folder');
-      }
-      print ' (' . $info->Nmsgs . ')</div>';
-      print '      </th>';
-      print '    </tr>'; */
     print '    <tr>';
     print '      <th style="text-align:right;">';
     $page_precedente = GETPOST("num_page") - 1;
@@ -314,27 +292,22 @@ if (FALSE === $info) {
             print '      <td style="text-align:center;width:30px;">';
             if ($mail->answered)
                 print img_picto('answered', 'answered@dolimail');
-            if ($mail->size < 1024)
-            {
+            if ($mail->size < 1024) {
                 $unit = '&nbsp;o.';
-            }
-            else if ($mail->size/1024 > 1024)
-            {
-                $mail->size = $mail->size/1024/1024;
+            } else if ($mail->size / 1024 > 1024) {
+                $mail->size = $mail->size / 1024 / 1024;
                 $unit = '&nbsp;Mo.';
-            }
-            else
-            {
-                $mail->size = $mail->size/1024;
-                $unit = '&nbsp;ko.';
+            } else {
+                $mail->size = $mail->size / 1024;
+                $unit = '&nbsp;Ko.';
             }
             print '      </td>';
             print '      <td><a href="' . dol_buildpath('/dolimail/detail.php', 1) . '?uid=' . $mail->uid . '">' . trim(utf8_encode(@iconv_mime_decode(imap_utf8($mail->subject)))) . '</a></td>';
             print '      <td>' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($mail->from)))) . '</td>';
             print '      <td style="text-align:center;width: 115px;">' . date("d/m/Y H:i", strtotime($mail->date)) . '</td>';
-            print '      <td style="text-align:right;">' . number_format($mail->size, 2) . $unit.'</td>';
+            print '      <td style="text-align:right;">' . number_format($mail->size, 2) . $unit . '</td>';
             print '      <td align="center">';
-            
+
             if ($mail->flagged)
                 print img_picto('flagged', 'flagged@dolimail');
             else

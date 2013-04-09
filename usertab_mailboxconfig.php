@@ -53,6 +53,8 @@ if (!$res)
 //require_once(DOL_DOCUMENT_ROOT."/../dev/skeleton/skeleton_class.class.php");
 require_once(DOL_DOCUMENT_ROOT . '/core/lib/usergroups.lib.php');
 require_once(DOL_DOCUMENT_ROOT . '/user/class/user.class.php');
+require_once(dirname(__FILE__) . '/class/usermailboxconfig.class.php');
+
 
 $id = GETPOST('id', 'int');
 $action = GETPOST('action');
@@ -66,23 +68,8 @@ $langs->load("dolimail@dolimail");
 $fuser = new User($db);
 $fuser->fetch($id);
 
-$sql = "SELECT mailbox_imap_login, mailbox_imap_password, mailbox_imap_host, mailbox_imap_port, mailbox_imap_ssl ";
-$sql.= " FROM " . MAIN_DB_PREFIX . "usermailboxconfig as u";
-$sql.= " WHERE u.fk_user = " . $id;
-
-$resql = $db->query($sql);
-if ($resql) {
-    if ($db->num_rows($resql)) {
-        $obj = $db->fetch_object($resql);
-
-        $fuser->mailbox_imap_login = $obj->mailbox_imap_login;
-        $fuser->mailbox_imap_password = $obj->mailbox_imap_password;
-        $fuser->mailbox_imap_host = $obj->mailbox_imap_host;
-        $fuser->mailbox_imap_port = $obj->mailbox_imap_port;
-        $fuser->mailbox_imap_ssl = $obj->mailbox_imap_ssl;
-    }
-    $db->free($resql);
-}
+$mailboxconfig = new Usermailboxconfig($db);
+$mailboxconfig->fetch_from_user($id);
 
 // If user is not user read and no permission to read other users, we stop
 if (($fuser->id != $user->id) && (!$user->rights->user->user->lire))
@@ -101,31 +88,21 @@ $result = restrictedArea($user, 'user', $id, '&user', $feature2);
 /*                     Actions                                                */
 /* * *************************************************************************** */
 
-if ($action == 'update' && $user->rights->user->user->creer && !$_POST["cancel"]) {
+if ($action == 'update' && $user->rights->user->user->creer && !GETPOST("cancel")) {
     $db->begin();
 
-    $fuser->mailbox_imap_login = $_POST["mailbox_imap_login"];
-    $fuser->mailbox_imap_password = $_POST["mailbox_imap_password"];
-    $fuser->mailbox_imap_host = $_POST["mailbox_imap_host"];
-    $fuser->mailbox_imap_port = $_POST["mailbox_imap_port"];
-    $fuser->mailbox_imap_ssl = $_POST["mailbox_imap_ssl"];
+    $mailboxconfig->id = GETPOST("mailboxuserid");
+    $mailboxconfig->fk_user = GETPOST("id");
+    $mailboxconfig->mailbox_imap_login = GETPOST("mailbox_imap_login");
+    $mailboxconfig->mailbox_imap_password = GETPOST("mailbox_imap_password");
+    $mailboxconfig->mailbox_imap_host = GETPOST("mailbox_imap_host");
+    $mailboxconfig->mailbox_imap_port = GETPOST("mailbox_imap_port");
+    $mailboxconfig->mailbox_imap_ssl = GETPOST("mailbox_imap_ssl");
 
-
-    $sql = "DELETE FROM " . MAIN_DB_PREFIX . "usermailboxconfig";
-    $sql .= " WHERE fk_user = " . $id;
-
-    $result = $db->query($sql);
-
-    $sql = "INSERT INTO " . MAIN_DB_PREFIX . "usermailboxconfig";
-    $sql .= " (fk_user,mailbox_imap_login,mailbox_imap_password,mailbox_imap_host,mailbox_imap_port,mailbox_imap_ssl)";
-    $sql .= " VALUES (" . $id;
-    $sql .= ", '" . $fuser->mailbox_imap_login . "'";
-    $sql .= ", '" . $fuser->mailbox_imap_password . "'";
-    $sql .= ", '" . $fuser->mailbox_imap_host . "'";
-    $sql .= ", '" . $fuser->mailbox_imap_port . "'";
-    $sql .= ", '" . $fuser->mailbox_imap_ssl . "')";
-
-    $res = $db->query($sql);
+    if ($mailboxconfig->id > 0)
+        $res = $mailboxconfig->update($user);
+    else
+        $res = $mailboxconfig->create($user);
 
     if ($res < 0) {
         $mesg = '<div class="error">' . $adh->error . '</div>';
@@ -134,6 +111,15 @@ if ($action == 'update' && $user->rights->user->user->creer && !$_POST["cancel"]
         $db->commit();
     }
 }
+
+$fuser->mailbox_id = $mailboxconfig->id;
+$fuser->mailbox_imap_login = $mailboxconfig->mailbox_imap_login;
+$fuser->mailbox_imap_password = $mailboxconfig->mailbox_imap_password;
+$fuser->mailbox_imap_host = $mailboxconfig->mailbox_imap_host;
+$fuser->mailbox_imap_port = $mailboxconfig->mailbox_imap_port;
+$fuser->mailbox_imap_ssl = $mailboxconfig->mailbox_imap_ssl;
+$fuser->mailbox_imap_ref = $mailboxconfig->get_ref();
+$fuser->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
 
 
 
@@ -157,6 +143,7 @@ if ($id) {
     print "<form method=\"post\" action=\"usertab_mailboxconfig.php\">";
     print '<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">';
     print '<input type="hidden" name="id" value="' . $id . '">';
+    print '<input type="hidden" name="mailboxuserid" value="' . $fuser->mailbox_id . '">';
     print '<input type="hidden" name="action" value="update">';
 
     print '<table class="border" width="100%">';
@@ -223,8 +210,6 @@ if ($id) {
             print 'Non';
     }
     print '</td></tr>';
-
-
     print "</table>";
 
     if ($action == 'edit') {
