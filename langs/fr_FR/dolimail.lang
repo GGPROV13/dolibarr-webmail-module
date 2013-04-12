@@ -2,6 +2,16 @@
 CHARSET= UTF-8
 
 #### ADMIN CONFIG INTERFACE ####
+
+#### USER CONFIG INTERFACE ####
+IMAP Login=IMAP - Identifiant
+IMAP Password=IMAP - Mot de passe
+IMAP Server=IMAP - URL du serveur
+IMAP Port=IMAP - Port
+IMAP SSL=IMAP - Activer SSL
+IMAP SSL NOVALIDATE CERT=IMAP - Accepter tous les certificats SSL
+
+#### VIEX ####
 DolimaillObject=Objet
 DolimaillFrom=Expediteur
 DolimaillDate=Date

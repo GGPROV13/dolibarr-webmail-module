@@ -41,6 +41,8 @@ if (!$res && file_exists("../../main.inc.php"))
     $res = @include("../../main.inc.php");
 if (!$res && file_exists("../../../main.inc.php"))
     $res = @include("../../../main.inc.php");
+if (!$res && file_exists("../../../../main.inc.php"))
+    $res = @include("../../../../main.inc.php");
 if (!$res && file_exists("../../../dolibarr/htdocs/main.inc.php"))
     $res = @include("../../../dolibarr/htdocs/main.inc.php");     // Used on dev env only
 if (!$res && file_exists("../../../../dolibarr/htdocs/main.inc.php"))
@@ -75,6 +77,8 @@ $user->mailbox_imap_login = $mailboxconfig->mailbox_imap_login;
 $user->mailbox_imap_password = $mailboxconfig->mailbox_imap_password;
 $user->mailbox_imap_host = $mailboxconfig->mailbox_imap_host;
 $user->mailbox_imap_port = $mailboxconfig->mailbox_imap_port;
+$user->mailbox_imap_ssl = $mailboxconfig->mailbox_imap_ssl;
+$user->mailbox_imap_ssl_novalidate_cert = $mailboxconfig->mailbox_imap_ssl_novalidate_cert;
 $user->mailbox_imap_ref = $mailboxconfig->get_ref();
 $user->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
 

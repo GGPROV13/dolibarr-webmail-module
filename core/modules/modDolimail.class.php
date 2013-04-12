@@ -174,6 +174,14 @@ class modDolimail extends DolibarrModules {
         // $this->rights[$r][4] = 'level1';				// In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
         // $this->rights[$r][5] = 'level2';				// In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
         // $r++;
+        
+        $this->rights[$r][0] = 10002; 				// Permission id (must not be already used)
+        $this->rights[$r][1] = 'Modifier ses parametres de configuration IMAP';	// Permission label
+        $this->rights[$r][3] = 0; 					// Permission by default for new user (0/1)
+        $this->rights[$r][4] = 'configuraion';				// In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
+        $this->rights[$r][5] = 'modify';				// In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
+        $r++;
+        
         // Main menu entries
         $this->menus = array();   // List of menus to add
         $r = 0;

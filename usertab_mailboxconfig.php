@@ -41,6 +41,8 @@ if (!$res && file_exists("../../main.inc.php"))
     $res = @include("../../main.inc.php");
 if (!$res && file_exists("../../../main.inc.php"))
     $res = @include("../../../main.inc.php");
+if (!$res && file_exists("../../../../main.inc.php"))
+    $res = @include("../../../../main.inc.php");
 if (!$res && file_exists("../../../dolibarr/htdocs/main.inc.php"))
     $res = @include("../../../dolibarr/htdocs/main.inc.php");     // Used on dev env only
 if (!$res && file_exists("../../../../dolibarr/htdocs/main.inc.php"))
@@ -88,7 +90,7 @@ $result = restrictedArea($user, 'user', $id, '&user', $feature2);
 /*                     Actions                                                */
 /* * *************************************************************************** */
 
-if ($action == 'update' && $user->rights->user->user->creer && !GETPOST("cancel")) {
+if ($action == 'update' && ($user->rights->dolimail->configuraion->modify || $user->admin) && !GETPOST("cancel")) {
     $db->begin();
 
     $mailboxconfig->id = GETPOST("mailboxuserid");
@@ -98,6 +100,7 @@ if ($action == 'update' && $user->rights->user->user->creer && !GETPOST("cancel"
     $mailboxconfig->mailbox_imap_host = GETPOST("mailbox_imap_host");
     $mailboxconfig->mailbox_imap_port = GETPOST("mailbox_imap_port");
     $mailboxconfig->mailbox_imap_ssl = GETPOST("mailbox_imap_ssl");
+    $mailboxconfig->mailbox_imap_ssl_novalidate_cert = GETPOST("mailbox_imap_ssl_novalidate_cert");
 
     if ($mailboxconfig->id > 0)
         $res = $mailboxconfig->update($user);
@@ -118,6 +121,7 @@ $fuser->mailbox_imap_password = $mailboxconfig->mailbox_imap_password;
 $fuser->mailbox_imap_host = $mailboxconfig->mailbox_imap_host;
 $fuser->mailbox_imap_port = $mailboxconfig->mailbox_imap_port;
 $fuser->mailbox_imap_ssl = $mailboxconfig->mailbox_imap_ssl;
+$fuser->mailbox_imap_ssl_novalidate_cert = $mailboxconfig->mailbox_imap_ssl_novalidate_cert;
 $fuser->mailbox_imap_ref = $mailboxconfig->get_ref();
 $fuser->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
 
@@ -210,6 +214,26 @@ if ($id) {
             print 'Non';
     }
     print '</td></tr>';
+    print '<tr><td>' . $langs->trans("IMAP SSL NOVALIDATE CERT") . '</td><td class="valeur" colspan="3">';
+    if ($action == 'edit') {
+        print '<select name="mailbox_imap_ssl_novalidate_cert" >';
+        print '<option value="1" ';
+        if ($fuser->mailbox_imap_ssl_novalidate_cert)
+            print 'selected ';
+        print '">Oui</option>';
+        print '<option value="0" ';
+        if (!$fuser->mailbox_imap_ssl_novalidate_cert)
+            print 'selected ';
+        print '">Non</option>';
+        print '</select>';
+    }
+    else {
+        if ($fuser->mailbox_imap_ssl_novalidate_cert)
+            print 'Oui';
+        if (!$fuser->mailbox_imap_ssl_novalidate_cert)
+            print 'Non';
+    }
+    print '</td></tr>';
     print "</table>";
 
     if ($action == 'edit') {
@@ -229,7 +253,7 @@ if ($id) {
     print '</div>';
     print '<div class="tabsAction">';
 
-    if ($user->rights->user->user->creer && $action != 'edit') {
+    if (($user->rights->dolimail->configuraion->modify || $user->admin) && $action != 'edit') {
         print "<a class=\"butAction\" href=\"usertab_mailboxconfig.php?id=" . $id . "&amp;action=edit\">" . $langs->trans('Modify') . "</a>";
     }
 
