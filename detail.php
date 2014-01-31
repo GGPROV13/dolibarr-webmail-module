@@ -91,7 +91,7 @@ $user->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
 
 llxHeader('', 'Dolibarr Webmail', '');
 
-$head[0][0] = DOL_URL_ROOT . '/dolimail/index.php';
+$head[0][0] = dol_buildpath('/dolimail/index.php',1);
 $head[0][1] = $langs->trans("DolimailMailbox");
 $head[0][2] = 'mailbox';
 
@@ -102,7 +102,7 @@ $head[1][2] = 'detail';
 dol_fiche_head($head, 'detail', $langs->trans("Webmail"), 0, 'mailbox@dolimail');
 
 // Connexion
-$mbox = imap_open($user->mailbox_imap_connector_url, $user->mailbox_imap_login, $user->mailbox_imap_password);
+$mbox = imap_open($user->mailbox_imap_connector_url.$folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
 
 
 if (FALSE === $mbox) {
@@ -131,7 +131,7 @@ print '<table>';
 print '<tr><td  width="30%" nowrap><span class="fieldrequired">' . $langs->trans("Rattacher à ") . '</span></td><td>';
 $out = '';
 if ($conf->use_javascript_ajax)
-    $out .= ajax_multiautocompleter('reference_0', array('reference_rowid_0', 'reference_type_element_0', 'reference_fk_socid_0'), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=0') . "\n";
+    $out .= ajax_multiautocompleter('reference_0', array('reference_rowid_0', 'reference_type_element_0', 'reference_fk_socid_0'), dol_buildpath('/dolimail/core/ajax/reference.php',1), 'num_ligne=0') . "\n";
 $out.= '<input id="reference_0" type="text" name="reference_0" value="' . GETPOST("reference_0");
 print $out . '">' . "\n";
 print '<input id="reference_rowid_0" type="hidden" name="reference_rowid" value="';

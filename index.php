@@ -195,7 +195,7 @@ if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('refe
 
 llxHeader('', 'Dolibarr Webmail', '');
 
-$head[0][0] = DOL_URL_ROOT . '/dolimail/index.php';
+$head[0][0] = dol_buildpath( '/dolimail/index.php',1);
 $head[0][1] = $langs->trans("DolimailMailbox");
 $head[0][2] = 'mailbox';
 
@@ -305,8 +305,7 @@ if (FALSE === $info) {
                 $unit = '&nbsp;Ko.';
             }
             print '      </td>';
-            print '      <td><a href="' . dol_buildpath('/dolimail/detail.php', 1) . '?uid=' . $mail->uid . '">' . trim(utf8_encode(@iconv_mime_decode(imap_utf8($mail->subject)))) . '</a></td>';
-            print '      <td>' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($mail->from)))) . '</td>';
+            print '      <td><a href="' . dol_buildpath('/dolimail/detail.php', 1) . '?uid=' . $mail->uid .($folder!=''?'&folder='.$folder:''). '">' . trim(utf8_encode(@iconv_mime_decode(imap_utf8($mail->subject)))) . '</a></td>';            print '      <td>' . trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($mail->from)))) . '</td>';
             print '      <td style="text-align:center;width: 115px;">' . date("d/m/Y H:i", strtotime($mail->date)) . '</td>';
             print '      <td style="text-align:right;">' . number_format($mail->size, 2) . $unit . '</td>';
             print '      <td align="center">';
@@ -321,7 +320,7 @@ if (FALSE === $info) {
             print '<table><tr><td>';
             $out = '';
             if ($conf->use_javascript_ajax)
-                $out .= ajax_multiautocompleter('reference_' . $i, array('reference_rowid_' . $i, 'reference_type_element_' . $i, 'reference_fk_socid_' . $i), DOL_URL_ROOT . '/dolimail/core/ajax/reference.php', 'num_ligne=' . $i) . "\n";
+                $out .= ajax_multiautocompleter('reference_' . $i, array('reference_rowid_' . $i, 'reference_type_element_' . $i, 'reference_fk_socid_' . $i), dol_buildpath('/dolimail/core/ajax/reference.php',1), 'num_ligne=' . $i) . "\n";
             $out.= '<input id="reference_' . $i . '" type="text" name="reference" value="';
             print $out . '">' . "\n";
             print '<input id="reference_rowid_' . $i . '" type="hidden" name="reference_rowid" value="';

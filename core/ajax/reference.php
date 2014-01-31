@@ -35,7 +35,23 @@ if (!defined('NOREQUIRESOC'))
 if (!defined('NOCSRFCHECK'))
     define('NOCSRFCHECK', '1');
 
-require('../../../main.inc.php');
+$res = 0;
+if (!$res && file_exists("../main.inc.php"))
+    $res = @include("../main.inc.php");
+if (!$res && file_exists("../../main.inc.php"))
+    $res = @include("../../main.inc.php");
+if (!$res && file_exists("../../../main.inc.php"))
+    $res = @include("../../../main.inc.php");
+if (!$res && file_exists("../../../../main.inc.php"))
+    $res = @include("../../../../main.inc.php");
+if (!$res && file_exists("../../../dolibarr/htdocs/main.inc.php"))
+    $res = @include("../../../dolibarr/htdocs/main.inc.php");     // Used on dev env only
+if (!$res && file_exists("../../../../dolibarr/htdocs/main.inc.php"))
+    $res = @include("../../../../dolibarr/htdocs/main.inc.php");   // Used on dev env only
+if (!$res && file_exists("../../../../../dolibarr/htdocs/main.inc.php"))
+    $res = @include("../../../../../dolibarr/htdocs/main.inc.php");   // Used on dev env only
+if (!$res)
+    die("Include of main fails");
 
 
 
@@ -100,11 +116,11 @@ if (!empty($_GET['reference_' . $_GET['num_ligne']])) {
     $sql.=" (c.ref LIKE '%" . $db->escape($reference) . "%' OR c.ref_supplier LIKE '%" . $db->escape($reference) . "%')";
     $sql .= " UNION ";
     // Recherche parmis les factures fournisseurs
-    $sql .= "SELECT f.rowid as rowid, f.facnumber as reference, s.nom as nom_societe, 'invoice_supplier' as type_element, s.rowid as fk_socid";
+    $sql .= "SELECT f.rowid as rowid, f.ref_supplier as reference, s.nom as nom_societe, 'invoice_supplier' as type_element, s.rowid as fk_socid";
     $sql.= " FROM " . MAIN_DB_PREFIX . "facture_fourn as f";
     $sql.= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid=f.fk_soc";
     $sql.= " WHERE ";
-    $sql.=" (f.facnumber LIKE '%" . $db->escape($reference) . "%')";
+    $sql.=" (f.ref_supplier LIKE '%" . $db->escape($reference) . "%')";
     $sql.= " ORDER BY reference, nom_societe";
     $sql.= $db->plimit(50); // Avoid pb with bad criteria
     //print $sql;
