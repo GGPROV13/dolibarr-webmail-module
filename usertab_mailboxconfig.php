@@ -160,7 +160,7 @@ if ($id) {
     print '</tr>';
 
     // Nom
-    print '<tr><td>' . $langs->trans("Lastname") . ' ' . $langs->trans("Firstname") . '</td><td class="valeur" colspan="3">' . $fuser->nom . '&nbsp;' . $fuser->prenom . '&nbsp;</td></tr>';
+    print '<tr><td>' . $langs->trans("Lastname") . ' ' . $langs->trans("Firstname") . '</td><td class="valeur" colspan="3">' . strtoupper($fuser->lastname) . '&nbsp;' . ucfirst($fuser->firstname) . '&nbsp;</td></tr>';
 
     // Login
     print '<tr><td>' . $langs->trans("IMAP Login") . '</td><td class="valeur" colspan="3">';

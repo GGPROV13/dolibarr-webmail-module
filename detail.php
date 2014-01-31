@@ -63,6 +63,7 @@ $langs->load("dolimail@dolimail");
 // Get parameters
 $id = GETPOST('id', 'int');
 $action = GETPOST('action', 'alpha');
+$folder = GETPOST('folder', 'alpha');
 
 // Protection if external user
 if ($user->societe_id > 0) {
