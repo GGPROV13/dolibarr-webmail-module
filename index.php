@@ -56,6 +56,7 @@ require_once(DOL_DOCUMENT_ROOT . "/core/lib/agenda.lib.php");
 require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/cactioncomm.class.php");
 require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/actioncomm.class.php");
 require_once(dirname(__FILE__) . '/class/usermailboxconfig.class.php');
+require_once(dirname(__FILE__) . '/lib/lib_dolimail.php');
 
 
 // Change this following line to use the correct relative path from htdocs (do not remove DOL_DOCUMENT_ROOT)
@@ -115,12 +116,25 @@ if (!(extension_loaded("IMAP"))) {
             $info = FALSE;
             $err = 'La connexion a échoué. Vérifiez vos paramètres!';
         } else {
-            $uid = $_GET['uid'];
+            $uid = GETPOST('reference_mail_uid');
+            list($charset, $htmlmsg, $plainmsg, $attachments) = getmsg($mbox, $uid);
+
             $headerText = imap_fetchHeader($mbox, GETPOST('reference_mail_uid'), FT_UID);
             $header = imap_rfc822_parse_headers($headerText);
 
-            // REM: Attention s'il y a plusieurs sections
-            $corps = trim(utf8_encode(quoted_printable_decode(imap_fetchbody($mbox, GETPOST('reference_mail_uid'), 1, FT_UID))));
+            switch ($charset) {
+                case 'ISO-8859-1':
+                case 'ISO-8859-15':
+                    $htmlmsg = utf8_encode($htmlmsg);
+                    $plainmsg = utf8_encode(nl2br($plainmsg));
+                    break;
+                default:
+                    $plainmsg = nl2br($plainmsg);
+            }
+            if ($htmlmsg != '')
+                $corps = $htmlmsg;
+            else
+                $corps = $plainmsg;
         }
         imap_close($mbox);
 
@@ -149,16 +163,15 @@ if (!(extension_loaded("IMAP"))) {
         $actioncomm->priority = 0;
         $actioncomm->fulldayevent = 0;
         $actioncomm->location = '';
+        $from = $header->from;
         // On utilise l'objet du mail 
-        $actioncomm->label = $header->subject;
+        $actioncomm->label = trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($header->subject))));
         // ou a défaut le label "Envoi de mail de %expediteur%"
         if (!$actioncomm->label) {
-            if (trim($header->from->personnal) == "")
-                $actioncomm->label = $langs->transnoentitiesnoconv("MailFrom", $header->fromadress);
-            else
-                $actioncomm->label = $langs->transnoentitiesnoconv("MailFrom", $header->from->personnal);
-        }
-
+            $lblfrom = @iconv_mime_decode(imap_utf8($from[0]->personal)) . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]";
+            $actioncomm->label = $langs->transnoentitiesnoconv("MailFrom", $lblfrom);
+        } else
+            $actioncomm->label = $langs->transnoentitiesnoconv("Mail ") . $actioncomm->label;
         if (GETPOST('reference_type_element') == 'projet')
             $actioncomm->fk_project = GETPOST('reference_rowid');
         else
@@ -237,7 +250,7 @@ if (!(extension_loaded("IMAP"))) {
         if ($folder == '')
             $folder = 'INBOX';
         $lbl_folder = array_reverse(explode('/', $folder));
-        $lbl_folder = str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $lbl_folder[0]));
+        $lbl_folder = sanitize_imap_folder(str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $lbl_folder[0])));
         print '<div style="float:left;width:19%;">';
         print '<div class="TitleImapDirectories"><a href="' . dol_buildpath('/dolimail/index.php', 1) . '">' . $langs->trans($lbl_folder) . ' (' . $info->Nmsgs . ') </a></div>';
         print '<ul id="MenuDirectory">';
@@ -253,7 +266,7 @@ if (!(extension_loaded("IMAP"))) {
             $nb_decalage = mb_substr_count($m, 'INBOX.');
             for ($decalage = 0; $decalage < $nb_decalage; $decalage++)
                 print '&nbsp;&nbsp;';
-            print $langs->trans(str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $m)));
+            print $langs->trans(sanitize_imap_folder(str_replace($user->mailbox_imap_ref, '', str_replace('INBOX.', '', $m))));
             print '</a></li>';
         }
         print '</ul>';

@@ -54,8 +54,11 @@ if (!$res)
 // Change this following line to use the correct relative path from htdocs (do not remove DOL_DOCUMENT_ROOT)
 //require_once(DOL_DOCUMENT_ROOT."/../dev/skeleton/skeleton_class.class.php");
 // Load traductions files requiredby by page
-require_once(dirname(__FILE__) . '/lib/lib_dolimail.php');
+require_once(DOL_DOCUMENT_ROOT . "/core/lib/agenda.lib.php");
+require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/cactioncomm.class.php");
+require_once(DOL_DOCUMENT_ROOT . "/comm/action/class/actioncomm.class.php");
 require_once(dirname(__FILE__) . '/class/usermailboxconfig.class.php');
+require_once(dirname(__FILE__) . '/lib/lib_dolimail.php');
 $langs->load("companies");
 $langs->load("other");
 $langs->load("dolimail@dolimail");
@@ -71,6 +74,8 @@ if ($user->societe_id > 0) {
 }
 
 
+
+
 $mailboxconfig = new Usermailboxconfig($db);
 $mailboxconfig->fetch_from_user($user->id);
 
@@ -83,6 +88,110 @@ $user->mailbox_imap_ssl_novalidate_cert = $mailboxconfig->mailbox_imap_ssl_noval
 $user->mailbox_imap_ref = $mailboxconfig->get_ref();
 $user->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
 
+
+
+    if (GETPOST('reference_mail_uid') && GETPOST('reference_rowid') && GETPOST('reference_type_element')) {
+
+        $mbox = imap_open($user->mailbox_imap_connector_url.$folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
+
+        if (FALSE === $mbox) {
+            $info = FALSE;
+            $err = 'La connexion a échoué. Vérifiez vos paramètres!';
+        } else {
+            $uid = GETPOST('reference_mail_uid');
+            list($charset, $htmlmsg, $plainmsg, $attachments) = getmsg($mbox, $uid);
+
+            $headerText = imap_fetchHeader($mbox, GETPOST('reference_mail_uid'), FT_UID);
+            $header = imap_rfc822_parse_headers($headerText);
+
+            switch ($charset) {
+                case 'ISO-8859-1':
+                case 'ISO-8859-15':
+                    $htmlmsg = utf8_encode($htmlmsg);
+                    $plainmsg = utf8_encode(nl2br($plainmsg));
+                    break;
+                default:
+                    $plainmsg = nl2br($plainmsg);
+            }
+            if ($htmlmsg != '')
+                $corps = $htmlmsg;
+            else
+                $corps = $plainmsg;
+        }
+        imap_close($mbox);
+
+        $actioncomm = new ActionComm($db);
+        $cactioncomm = new CActionComm($db);
+
+        // Initialisation objet actioncomm
+        $usertodo = $user;
+        $actioncomm->usertodo = $usertodo;
+
+        if (GETPOST('reference_fk_socid', 'int') > 0) {
+            $societe = new Societe($db);
+            $societe->fetch(GETPOST('reference_fk_socid', 'int'));
+            $actioncomm->societe = $societe;
+        }
+
+        if ($conf->global->CODE_ACTIONCOMM_WEBMAIL)
+            $cactioncomm_code = $conf->global->CODE_ACTIONCOMM_WEBMAIL;
+        else
+            $cactioncomm_code = "AC_OTH";
+
+        $result = $cactioncomm->fetch($cactioncomm_code);
+
+        $actioncomm->type_id = $cactioncomm->id;
+        $actioncomm->type_code = $cactioncomm->code;
+        $actioncomm->priority = 0;
+        $actioncomm->fulldayevent = 0;
+        $actioncomm->location = '';
+        $from = $header->from;
+        // On utilise l'objet du mail 
+        $actioncomm->label = trim(preg_replace('/<.*>|"/', '', @iconv_mime_decode(imap_utf8($header->subject))));
+        // ou a défaut le label "Envoi de mail de %expediteur%"
+        if (!$actioncomm->label) {
+            $lblfrom = @iconv_mime_decode(imap_utf8($from[0]->personal)) . " [" . $from[0]->mailbox . "@" . $from[0]->host . "]";
+            $actioncomm->label = $langs->transnoentitiesnoconv("MailFrom", $lblfrom);
+        } else
+            $actioncomm->label = $langs->transnoentitiesnoconv("Mail ") . $actioncomm->label;
+        if (GETPOST('reference_type_element') == 'projet')
+            $actioncomm->fk_project = GETPOST('reference_rowid');
+        else
+            $actioncomm->fk_project = 0;
+        $actioncomm->datep = strtotime($header->date);
+
+        // On recupère le contenu du mail qu'on place dans la note
+        $actioncomm->note = trim($corps);
+
+        $actioncomm->fk_element = GETPOST('reference_rowid');
+        $actioncomm->elementtype = GETPOST('reference_type_element');
+
+        // 
+        // TODO
+        // On recherche l'expediteur dans les contacts
+        if (isset($_POST["contactid"])) {
+            $actioncomm->contact = $contact;
+        }
+        // Special for module webcal and phenix
+        if ($_POST["add_webcal"] == 'on' && $conf->webcalendar->enabled)
+            $actioncomm->use_webcal = 1;
+        if ($_POST["add_phenix"] == 'on' && $conf->phenix->enabled)
+            $actioncomm->use_phenix = 1;
+
+
+        if (!$error) {
+            $db->begin();
+
+            // On cree l'action
+            $idaction = $actioncomm->add($user);
+
+            if ($idaction > 0) {
+                if (!$actioncomm->error) {
+                    $db->commit();
+                }
+            }
+        }
+    }
 
 /* * *************************************************
  * VIEW
@@ -129,7 +238,7 @@ switch($charset)
 }
 print '<form name="link_0" method="POST">';
 print '<table>';
-print '<tr><td  width="30%" nowrap><span class="fieldrequired">' . $langs->trans("Rattacher à ") . '</span></td><td>';
+print '<tr><td  width="30%" nowrap><span class="fieldrequired">' . $langs->trans("DolimaillLinked") . '</span></td><td>';
 $out = '';
 if ($conf->use_javascript_ajax)
     $out .= ajax_multiautocompleter('reference_0', array('reference_rowid_0', 'reference_type_element_0', 'reference_fk_socid_0'), dol_buildpath('/dolimail/core/ajax/reference.php',1), 'num_ligne=0') . "\n";
