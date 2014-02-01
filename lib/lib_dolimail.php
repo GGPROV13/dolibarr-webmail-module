@@ -1,7 +1,53 @@
 <?php
 
+require_once(dirname(__FILE__) . '/../class/usermailboxconfig.class.php');
+
+function store_email_into_folder($msg, $folder = 'SentFromDolibarr') {
+    global $user, $db;
+    $mailboxconfig = new Usermailboxconfig($db);
+    $mailboxconfig->fetch_from_user($user->id);
+
+    $user->mailbox_imap_login = $mailboxconfig->mailbox_imap_login;
+    $user->mailbox_imap_password = $mailboxconfig->mailbox_imap_password;
+    $user->mailbox_imap_host = $mailboxconfig->mailbox_imap_host;
+    $user->mailbox_imap_port = $mailboxconfig->mailbox_imap_port;
+    $user->mailbox_imap_ssl = $mailboxconfig->mailbox_imap_ssl;
+    $user->mailbox_imap_ssl_novalidate_cert = $mailboxconfig->mailbox_imap_ssl_novalidate_cert;
+    $user->mailbox_imap_ref = $mailboxconfig->get_ref();
+    $user->mailbox_imap_connector_url = $mailboxconfig->get_connector_url();
+
+    $mbox = imap_open($user->mailbox_imap_connector_url . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
+
+    $check = imap_check($mbox);
+    $before = $check->Nmsgs;
+
+    $result = imap_append($mbox, $user->mailbox_imap_connector_url . $folder
+            , $msg
+    );
+    
+            $check = imap_check($mbox);
+            $after = $check->Nmsgs;
+
+    if ($result == FALSE) {
+        if (imap_createmailbox($mbox, imap_utf7_encode($user->mailbox_imap_ref . $folder))) {
+            $mbox = imap_open($user->mailbox_imap_connector_url . $folder, $user->mailbox_imap_login, $user->mailbox_imap_password);
+
+            $check = imap_check($mbox);
+            $before = $check->Nmsgs;
+
+            $result = imap_append($mbox, $user->mailbox_imap_connector_url . $folder
+                    , $msg
+            );
+
+            $check = imap_check($mbox);
+            $after = $check->Nmsgs;
+        }
+    }
+    imap_close($mbox);
+}
+
 function sanitize_imap_folder($folder) {
-    return str_replace("?;","&nbsp;",utf8_encode(mb_convert_encoding( $folder, "ISO_8859-1", "UTF7-IMAP" )));
+    return str_replace("?;", "&nbsp;", utf8_encode(mb_convert_encoding($folder, "ISO_8859-1", "UTF7-IMAP")));
 }
 
 function getmsg($mbox, $mid) {
@@ -29,6 +75,12 @@ function getpart($mbox, $mid, $p, $partno, $charset, $htmlmsg, $plainmsg, $attac
         $data = ($partno) ?
                 imap_fetchbody($mbox, $mid, $partno, FT_UID) : // multipart
                 imap_body($mbox, $mid, FT_UID);  // simple
+
+
+
+
+
+
 
         
 // Any part may be encoded, even plain text messages, so check everything.
